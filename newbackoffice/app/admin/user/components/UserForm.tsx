@@ -1,0 +1,164 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { X } from 'lucide-react';
+
+interface UserFormProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: any) => Promise<void>;
+}
+
+export default function UserForm({
+  isOpen,
+  onClose,
+  onSubmit,
+}: UserFormProps) {
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    phone: '',
+    contact_info: '',
+    role_id: '',
+    password: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        username: '',
+        email: '',
+        phone: '',
+        contact_info: '',
+        role_id: '',
+        password: '',
+      });
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        username: formData.username,
+        email: formData.email || undefined,
+        phone: formData.phone || undefined,
+        contact_info: formData.contact_info || undefined,
+        role_id: parseInt(formData.role_id),
+        password: formData.password,
+      };
+
+      await onSubmit(payload);
+      onClose();
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl border-l z-50 overflow-y-auto">
+      <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
+        <h2 className="text-xl font-semibold">Хэрэглэгч үүсгэх</h2>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="username">Username *</Label>
+          <Input
+            id="username"
+            value={formData.username}
+            onChange={(e) => setFormData((prev) => ({ ...prev, username: e.target.value }))}
+            placeholder="Username"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+            placeholder="Email"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone</Label>
+          <Input
+            id="phone"
+            value={formData.phone}
+            onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+            placeholder="Phone"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="contact_info">Contact Info</Label>
+          <Input
+            id="contact_info"
+            value={formData.contact_info}
+            onChange={(e) => setFormData((prev) => ({ ...prev, contact_info: e.target.value }))}
+            placeholder="Contact details or notes"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="role_id">Role *</Label>
+          <Select
+            value={formData.role_id}
+            onValueChange={(value) => setFormData((prev) => ({ ...prev, role_id: value }))}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">Admin</SelectItem>
+              <SelectItem value="2">Customer</SelectItem>
+              <SelectItem value="3">Driver</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="password">Password *</Label>
+          <Input
+            id="password"
+            type="password"
+            value={formData.password}
+            onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+            placeholder="Password"
+            required
+          />
+        </div>
+
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? 'Хадгалж байна...' : 'Хадгалах'}
+        </Button>
+      </form>
+    </div>
+  );
+}

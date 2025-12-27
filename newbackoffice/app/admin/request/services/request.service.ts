@@ -1,0 +1,69 @@
+import { User, CreateUserPayload, UpdatePhonePayload } from '../types/request';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
+// Helper function to get auth token
+const getAuthHeaders = () => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+};
+
+// Fetch users (drivers with role_id 3)
+export const fetchUsers = async (): Promise<User[]> => {
+  const response = await fetch(`${API_URL}/api/user`, {
+    headers: getAuthHeaders(),
+  });
+
+  const result = await response.json();
+  if (result.success) {
+    return result.data;
+  }
+  throw new Error(result.message || 'Failed to fetch users');
+};
+
+// Create user
+export const createUser = async (payload: CreateUserPayload): Promise<User> => {
+  const response = await fetch(`${API_URL}/api/user`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const result = await response.json();
+  if (response.ok && result.success) {
+    return result.data;
+  }
+  throw new Error(result.message || 'Failed to create user');
+};
+
+// Update user phone
+export const updateUserPhone = async (userId: number, payload: UpdatePhonePayload): Promise<User> => {
+  const response = await fetch(`${API_URL}/api/user/${userId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const result = await response.json();
+  if (response.ok && result.success) {
+    return result.data;
+  }
+  throw new Error(result.message || 'Failed to update phone');
+};
+
+// Delete user
+export const deleteUser = async (userId: number): Promise<void> => {
+  const response = await fetch(`${API_URL}/api/user/${userId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  const result = await response.json();
+  if (!result.success && !response.ok) {
+    throw new Error(result.message || 'Failed to delete user');
+  }
+};
+
