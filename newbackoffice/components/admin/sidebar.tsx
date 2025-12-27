@@ -125,13 +125,7 @@ const menuItems: MenuItemType[] = [
         icon: <FileText className="w-4 h-4" />,
         label: "Тайлан",
         permission: "log:view_log",
-      },
-      {
-        key: "/admin/summary",
-        icon: <BarChart3 className="w-4 h-4" />,
-        label: "Тайлан жагсаалт",
-        permission: "reports:view_reports",
-      },
+      }
     ],
   },
   {

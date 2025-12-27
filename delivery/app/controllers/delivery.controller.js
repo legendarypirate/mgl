@@ -439,7 +439,9 @@ exports.findAll = async (req, res) => {
       filterStart = new Date(`${start_date}T00:00:00+08:00`);
       filterEnd = new Date(`${end_date}T23:59:59+08:00`);
 
-      where.delivered_at = { [Op.between]: [filterStart, filterEnd] };
+      // Filter by createdAt to include all deliveries created in the date range
+      // This ensures deliveries without delivered_at are still included
+      where.createdAt = { [Op.between]: [filterStart, filterEnd] };
     }
 
     // 🔍 Query database
