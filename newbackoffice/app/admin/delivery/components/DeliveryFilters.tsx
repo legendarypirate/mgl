@@ -73,60 +73,56 @@ export default function DeliveryFilters({
         className="w-48"
       />
 
-      {hasPermission('delivery:excel_import_delivery') && (
-        <>
-          <Select
-            value={selectedDriverId?.toString() || 'all'}
-            onValueChange={(value) => onDriverFilterChange(value === 'all' ? null : parseInt(value))}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Жолоочноор шүүх" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Бүгд</SelectItem>
-              {drivers.map((driver) => (
-                <SelectItem key={driver.id} value={driver.id.toString()}>
-                  {driver.username}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <Select
+        value={selectedDriverId?.toString() || 'all'}
+        onValueChange={(value) => onDriverFilterChange(value === 'all' ? null : parseInt(value))}
+      >
+        <SelectTrigger className="w-48">
+          <SelectValue placeholder="Жолоочноор шүүх" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Бүгд</SelectItem>
+          {drivers.map((driver) => (
+            <SelectItem key={driver.id} value={driver.id.toString()}>
+              {driver.username}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-          <Select
-  value={selectedDistrictId?.toString() || 'all'}
-  onValueChange={(value) => onDistrictFilterChange(value === 'all' ? null : parseInt(value))}
->
-  <SelectTrigger className="w-36"> {/* Reduced from w-48 to w-36 */}
-    <SelectValue placeholder="Дүүргээр шүүх" />
-  </SelectTrigger>
-  <SelectContent className="min-w-[var(--radix-select-trigger-width)]"> {/* Matches trigger width */}
-    <SelectItem value="all">Бүгд</SelectItem>
-    {districts.map((district) => (
-      <SelectItem key={district.id} value={district.id.toString()}>
-        {district.name}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
+      <Select
+        value={selectedDistrictId?.toString() || 'all'}
+        onValueChange={(value) => onDistrictFilterChange(value === 'all' ? null : parseInt(value))}
+      >
+        <SelectTrigger className="w-36">
+          <SelectValue placeholder="Дүүргээр шүүх" />
+        </SelectTrigger>
+        <SelectContent className="min-w-[var(--radix-select-trigger-width)]">
+          <SelectItem value="all">Бүгд</SelectItem>
+          {districts.map((district) => (
+            <SelectItem key={district.id} value={district.id.toString()}>
+              {district.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-          <Select
-            value={selectedMerchantId?.toString() || 'all'}
-            onValueChange={(value) => onMerchantFilterChange(value === 'all' ? null : parseInt(value))}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Мерчандаар шүүх" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Бүгд</SelectItem>
-              {merchants.map((merchant) => (
-                <SelectItem key={merchant.id} value={merchant.id.toString()}>
-                  {merchant.username}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </>
-      )}
+      <Select
+        value={selectedMerchantId?.toString() || 'all'}
+        onValueChange={(value) => onMerchantFilterChange(value === 'all' ? null : parseInt(value))}
+      >
+        <SelectTrigger className="w-48">
+          <SelectValue placeholder="Мерчандаар шүүх" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Бүгд</SelectItem>
+          {merchants.map((merchant) => (
+            <SelectItem key={merchant.id} value={merchant.id.toString()}>
+              {merchant.username}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
       <div className="flex items-center gap-2">
         <Input
@@ -195,7 +191,6 @@ export default function DeliveryFilters({
 </DropdownMenu>
 
       <div className="ml-auto flex items-center gap-2">
-        {hasPermission('delivery:excel_import_delivery') && (
           <Button
             variant="outline"
             onClick={onExcelImport}
@@ -204,7 +199,6 @@ export default function DeliveryFilters({
           >
             <Upload className="h-4 w-4" />
           </Button>
-        )}
         <Button onClick={onAddDelivery} size="icon" title="Хүргэлт нэмэх">
           <Plus className="h-4 w-4" />
         </Button>
