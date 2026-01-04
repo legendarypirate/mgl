@@ -24,7 +24,11 @@ exports.create = async (req, res) => {
       phone: req.body.phone,
       email: req.body.email,
       role_id: req.body.role_id,
-      password: hashedPassword
+      password: hashedPassword,
+      bank: req.body.bank,
+      account_number: req.body.account_number,
+      contact_info: req.body.contact_info,
+      address: req.body.address
     };
 
     // Save User in the database

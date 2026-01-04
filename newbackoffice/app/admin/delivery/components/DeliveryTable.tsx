@@ -69,12 +69,15 @@ export default function DeliveryTable({
               <TableHead className="w-12">
                 <Skeleton className="h-4 w-4" />
               </TableHead>
+              <TableHead>ID</TableHead>
               <TableHead>Үүссэн огноо</TableHead>
               <TableHead>Хүргэсэн огноо</TableHead>
               {!isMerchant && <TableHead>Мерчанд нэр</TableHead>}
               <TableHead>Утас / Хаяг</TableHead>
               <TableHead>Төлөв</TableHead>
               <TableHead>Үнэ</TableHead>
+              <TableHead>Төлбөр</TableHead>
+              <TableHead>Хөдөө</TableHead>
               <TableHead>Тайлбар</TableHead>
               <TableHead>Ж/тайлбар</TableHead>
               {!isMerchant && <TableHead>Жолооч нэр</TableHead>}
@@ -85,12 +88,15 @@ export default function DeliveryTable({
             {[1, 2, 3].map((i) => (
               <TableRow key={i}>
                 <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-12" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                 {!isMerchant && <TableCell><Skeleton className="h-4 w-24" /></TableCell>}
                 <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-12" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                 {!isMerchant && <TableCell><Skeleton className="h-4 w-20" /></TableCell>}
@@ -125,6 +131,7 @@ export default function DeliveryTable({
             <TableHead>Утас / Хаяг</TableHead>
             <TableHead>Төлөв</TableHead>
             <TableHead>Үнэ</TableHead>
+          
             <TableHead>Тайлбар</TableHead>
             <TableHead>Ж/тайлбар</TableHead>
             {!isMerchant && <TableHead>Жолооч нэр</TableHead>}
@@ -134,7 +141,7 @@ export default function DeliveryTable({
         <TableBody>
           {deliveries.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={isMerchant ? 9 : 11} className="text-center text-gray-400 py-8">
+              <TableCell colSpan={isMerchant ? 12 : 14} className="text-center text-gray-400 py-8">
                 Хүргэлт олдсонгүй
               </TableCell>
             </TableRow>
@@ -142,7 +149,7 @@ export default function DeliveryTable({
             deliveries.map((delivery) => (
               <React.Fragment key={delivery.id}>
                 <TableRow
-                  className={`cursor-pointer ${delivery.is_paid ? 'bg-green-50' : ''} ${
+                  className={`cursor-pointer ${
                     isRowSelected(delivery.id) ? 'bg-blue-50' : ''
                   }`}
                   onClick={(e) => handleRowClick(e, delivery)}
@@ -246,7 +253,7 @@ export default function DeliveryTable({
                 </TableRow>
                 {isRowExpanded(delivery.id) && (
                   <TableRow>
-                    <TableCell colSpan={isMerchant ? 9 : 11}>
+                    <TableCell colSpan={isMerchant ? 12 : 14}>
                       {loadingRows.includes(delivery.id) ? (
                         <div className="p-4 text-center">Loading items...</div>
                       ) : (

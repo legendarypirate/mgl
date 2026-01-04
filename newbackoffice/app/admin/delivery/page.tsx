@@ -29,6 +29,7 @@ import {
   District,
   DeliveryFilters as Filters,
   ProductItem,
+  Region,
 } from './types/delivery';
 import {
   fetchDeliveries,
@@ -44,6 +45,7 @@ import {
   fetchStatuses,
   fetchProducts,
   importDeliveries,
+  fetchRegions,
 } from './services/delivery.service';
 import { useSearchParams } from 'next/navigation';
 
@@ -54,6 +56,7 @@ const DISTRICTS: District[] = [
   { id: 4, name: 'Чингэлтэй' },
   { id: 5, name: 'Сонгинохайрхан' },
   { id: 6, name: 'Баянгол' },
+  { id: 7, name: 'Орон нутаг' },
 ];
 
 export default function DeliveryPage() {
@@ -88,6 +91,7 @@ export default function DeliveryPage() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
+  const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
   const [selectedStatusId, setSelectedStatusId] = useState<number | null>(null);
   const [deliveryHistory, setDeliveryHistory] = useState<DeliveryHistory[]>([]);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
@@ -101,6 +105,7 @@ export default function DeliveryPage() {
   // Data
   const [merchants, setMerchants] = useState<User[]>([]);
   const [drivers, setDrivers] = useState<User[]>([]);
+  const [regions, setRegions] = useState<Region[]>([]);
   const [statusList, setStatusList] = useState<DeliveryStatus[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
 
@@ -126,15 +131,17 @@ export default function DeliveryPage() {
 
     const loadData = async () => {
       try {
-        const [merchantsData, driversData, statusesData] = await Promise.all([
+        const [merchantsData, driversData, statusesData, regionsData] = await Promise.all([
           fetchMerchants().catch(() => []),
           fetchDrivers().catch(() => []),
           fetchStatuses().catch(() => []),
+          fetchRegions().catch(() => []),
         ]);
 
         setMerchants(merchantsData);
         setDrivers(driversData);
         setStatusList(statusesData);
+        setRegions(regionsData);
       } catch (error) {
         console.error('Error loading initial data:', error);
       }
@@ -729,11 +736,15 @@ export default function DeliveryPage() {
         onClose={() => {
           setIsDriverModalOpen(false);
           setSelectedDriverId(null);
+          setSelectedRegionId(null);
         }}
         onSave={handleSaveAllocation}
         drivers={drivers}
         selectedDriverId={selectedDriverId}
         onDriverSelect={setSelectedDriverId}
+        regions={regions}
+        selectedRegionId={selectedRegionId}
+        onRegionSelect={setSelectedRegionId}
       />
 
       <StatusChangeModal

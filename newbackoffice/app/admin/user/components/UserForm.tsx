@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { X } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 
 interface UserFormProps {
   isOpen: boolean;
@@ -28,7 +29,10 @@ export default function UserForm({
     username: '',
     email: '',
     phone: '',
+    bank: '',
+    account_number: '',
     contact_info: '',
+    address: '',
     role_id: '',
     password: '',
   });
@@ -40,7 +44,10 @@ export default function UserForm({
         username: '',
         email: '',
         phone: '',
+        bank: '',
+        account_number: '',
         contact_info: '',
+        address: '',
         role_id: '',
         password: '',
       });
@@ -57,7 +64,10 @@ export default function UserForm({
         username: formData.username,
         email: formData.email || undefined,
         phone: formData.phone || undefined,
+        bank: formData.bank || undefined,
+        account_number: formData.account_number || undefined,
         contact_info: formData.contact_info || undefined,
+        address: formData.address || undefined,
         role_id: parseInt(formData.role_id),
         password: formData.password,
       };
@@ -116,12 +126,43 @@ export default function UserForm({
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="bank">Bank Name</Label>
+          <Input
+            id="bank"
+            value={formData.bank}
+            onChange={(e) => setFormData((prev) => ({ ...prev, bank: e.target.value }))}
+            placeholder="Bank name"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="account_number">Account Number</Label>
+          <Input
+            id="account_number"
+            value={formData.account_number}
+            onChange={(e) => setFormData((prev) => ({ ...prev, account_number: e.target.value }))}
+            placeholder="Account number"
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="contact_info">Contact Info</Label>
           <Input
             id="contact_info"
             value={formData.contact_info}
             onChange={(e) => setFormData((prev) => ({ ...prev, contact_info: e.target.value }))}
-            placeholder="Contact details or notes"
+            placeholder="Contact info"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="address">Address</Label>
+          <Textarea
+            id="address"
+            value={formData.address}
+            onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
+            placeholder="Address"
+            rows={3}
           />
         </div>
 

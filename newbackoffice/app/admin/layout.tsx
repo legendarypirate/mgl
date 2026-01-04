@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 interface MenuItemType {
   key: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   label: string;
   permission?: string;
   children?: MenuItemType[];

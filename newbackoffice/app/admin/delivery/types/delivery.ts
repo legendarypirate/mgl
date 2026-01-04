@@ -80,6 +80,11 @@ export interface District {
   name: string;
 }
 
+export interface Region {
+  id: number;
+  name: string;
+}
+
 export interface DeliveryFilters {
   phone?: string;
   merchantId?: number;

@@ -31,14 +31,18 @@ export default function LandingPage() {
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || !data.success) {
         setMessageType("error");
         setMessage(data.message || "Нэвтрэхэд алдаа гарлаа");
       } else {
-        localStorage.setItem("token", data.token);
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-        }
+        // Store all relevant info
+        const { token, user } = data;
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("permissions", JSON.stringify(user.permissions || []));
+        localStorage.setItem("role", user.role?.toString() ?? "");
+        localStorage.setItem("username", user.username || "");
+
         setMessageType("success");
         setMessage("Амжилттай нэвтэрлээ");
 

@@ -169,7 +169,9 @@ export default function OrderPage() {
     try {
       await allocateOrders({
         driver_id: selectedDriverId,
-        delivery_ids: selectedRowKeys,
+        delivery_ids: selectedRowKeys.map(key => 
+          typeof key === 'bigint' ? Number(key) : key
+        ) as (string | number)[],
       });
       toast.success('Захиалга жолоочод амжилттай хуваарилагдлаа');
       setIsDriverModalOpen(false);

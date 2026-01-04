@@ -6,6 +6,9 @@ export interface User {
   phone: string;
   contact_info?: string;
   role_id: number;
+  bank?: string;
+  account_number?: string;
+  address?: string;
   createdAt: string;
   updatedAt: string;
 }

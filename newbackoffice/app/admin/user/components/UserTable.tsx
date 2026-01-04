@@ -31,21 +31,30 @@ export default function UserTable({
 
   if (loading) {
     return (
-      <div className="border rounded-md">
+      <div className="border rounded-md overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>ID</TableHead>
               <TableHead>Username</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Contact Info</TableHead>
+              <TableHead>Bank</TableHead>
+              <TableHead>Account Number</TableHead>
+              <TableHead>Address</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Created At</TableHead>
+              <TableHead>Updated At</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {[1, 2, 3].map((i) => (
               <TableRow key={i}>
+                <TableCell>
+                  <Skeleton className="h-4 w-8" />
+                </TableCell>
                 <TableCell>
                   <Skeleton className="h-4 w-24" />
                 </TableCell>
@@ -59,7 +68,22 @@ export default function UserTable({
                   <Skeleton className="h-4 w-24" />
                 </TableCell>
                 <TableCell>
+                  <Skeleton className="h-4 w-20" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-24" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-32" />
+                </TableCell>
+                <TableCell>
                   <Skeleton className="h-4 w-16" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-32" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-32" />
                 </TableCell>
                 <TableCell>
                   <Skeleton className="h-4 w-16" />
@@ -72,38 +96,64 @@ export default function UserTable({
     );
   }
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   return (
-    <div className="border rounded-md">
+    <div className="border rounded-md overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>ID</TableHead>
             <TableHead>Username</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Contact Info</TableHead>
+            <TableHead>Bank</TableHead>
+            <TableHead>Account Number</TableHead>
+            <TableHead>Address</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Created At</TableHead>
+            <TableHead>Updated At</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-gray-400 py-8">
+              <TableCell colSpan={12} className="text-center text-gray-400 py-8">
                 Хэрэглэгч олдсонгүй
               </TableCell>
             </TableRow>
           ) : (
             users.map((user) => (
               <TableRow key={user.id}>
+                <TableCell>{user.id}</TableCell>
                 <TableCell>{user.username}</TableCell>
                 <TableCell>{user.email || '-'}</TableCell>
                 <TableCell>{user.phone || '-'}</TableCell>
                 <TableCell>{user.contact_info || '-'}</TableCell>
+                <TableCell>{user.bank || '-'}</TableCell>
+                <TableCell>{user.account_number || '-'}</TableCell>
+                <TableCell className="max-w-xs truncate" title={user.address || ''}>
+                  {user.address || '-'}
+                </TableCell>
                 <TableCell>
                   <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">
                     {getRoleLabel(user.role_id)}
                   </span>
                 </TableCell>
+                <TableCell className="text-xs">{formatDate(user.createdAt)}</TableCell>
+                <TableCell className="text-xs">{formatDate(user.updatedAt)}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     {onEdit && (

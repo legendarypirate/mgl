@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Delivery, DeliveryHistory, DeliveryStatus, User } from '../types/delivery';
+import { Delivery, DeliveryHistory, DeliveryStatus, User, Region } from '../types/delivery';
 import { format } from 'date-fns';
 
 interface DriverAllocationModalProps {
@@ -29,6 +29,9 @@ interface DriverAllocationModalProps {
   drivers: User[];
   selectedDriverId: number | null;
   onDriverSelect: (driverId: number) => void;
+  regions: Region[];
+  selectedRegionId: number | null;
+  onRegionSelect: (regionId: number | null) => void;
 }
 
 export function DriverAllocationModal({
@@ -38,6 +41,9 @@ export function DriverAllocationModal({
   drivers,
   selectedDriverId,
   onDriverSelect,
+  regions,
+  selectedRegionId,
+  onRegionSelect,
 }: DriverAllocationModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -46,21 +52,43 @@ export function DriverAllocationModal({
           <DialogTitle>Жолооч сонгох</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <Select
-            value={selectedDriverId?.toString() || ''}
-            onValueChange={(value) => onDriverSelect(parseInt(value))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Жолооч сонгох" />
-            </SelectTrigger>
-            <SelectContent>
-              {drivers.map((driver) => (
-                <SelectItem key={driver.id} value={driver.id.toString()}>
-                  {driver.username}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-2">
+            <Label>Орон нутаг</Label>
+            <Select
+              value={selectedRegionId?.toString() || 'all'}
+              onValueChange={(value) => onRegionSelect(value === 'all' ? null : parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Орон нутаг сонгох" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Бүгд</SelectItem>
+                {regions.map((region) => (
+                  <SelectItem key={region.id} value={region.id.toString()}>
+                    {region.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Жолооч</Label>
+            <Select
+              value={selectedDriverId?.toString() || ''}
+              onValueChange={(value) => onDriverSelect(parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Жолооч сонгох" />
+              </SelectTrigger>
+              <SelectContent>
+                {drivers.map((driver) => (
+                  <SelectItem key={driver.id} value={driver.id.toString()}>
+                    {driver.username}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>

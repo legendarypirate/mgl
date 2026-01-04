@@ -8,6 +8,7 @@ import {
   CreateDeliveryPayload,
   UpdateDeliveryPayload,
   DeliveryItem,
+  Region,
 } from '../types/delivery';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -203,6 +204,19 @@ export const fetchStatuses = async (): Promise<DeliveryStatus[]> => {
     return result.data;
   }
   throw new Error('Failed to fetch statuses');
+};
+
+// Fetch regions
+export const fetchRegions = async (): Promise<Region[]> => {
+  const response = await fetch(`${API_URL}/api/region`, {
+    headers: getAuthHeaders(),
+  });
+
+  const result = await response.json();
+  if (result.success) {
+    return result.data;
+  }
+  throw new Error('Failed to fetch regions');
 };
 
 // Fetch products/goods
