@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import DeliveryTable from './components/DeliveryTable';
@@ -59,7 +59,7 @@ const DISTRICTS: District[] = [
   { id: 7, name: 'Орон нутаг' },
 ];
 
-export default function DeliveryPage() {
+function DeliveryPageContent() {
   const searchParams = useSearchParams();
   const statusIdsParam = searchParams.get('status_ids') || '';
   const initialStatusIds = statusIdsParam
@@ -777,6 +777,14 @@ export default function DeliveryPage() {
         onFormDataChange={setEditFormData}
       />
     </div>
+  );
+}
+
+export default function DeliveryPage() {
+  return (
+    <Suspense fallback={<div className="w-full mt-6 px-4 pb-32">Ачааллаж байна...</div>}>
+      <DeliveryPageContent />
+    </Suspense>
   );
 }
 
