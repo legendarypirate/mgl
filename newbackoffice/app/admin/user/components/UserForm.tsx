@@ -4,13 +4,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { X } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -37,7 +30,6 @@ export default function UserForm({
     account_number: '',
     contact_info: '',
     address: '',
-    role_id: '',
     password: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,7 +46,6 @@ export default function UserForm({
           account_number: user.account_number || '',
           contact_info: user.contact_info || '',
           address: user.address || '',
-          role_id: user.role_id?.toString() || '',
           password: '', // Don't populate password for security
         });
       } else {
@@ -67,7 +58,6 @@ export default function UserForm({
           account_number: '',
           contact_info: '',
           address: '',
-          role_id: '',
           password: '',
         });
       }
@@ -88,7 +78,6 @@ export default function UserForm({
         account_number: formData.account_number || undefined,
         contact_info: formData.contact_info || undefined,
         address: formData.address || undefined,
-        role_id: parseInt(formData.role_id),
       };
       
       // Only include password if it's provided (for edit mode) or required (for create mode)
@@ -188,24 +177,6 @@ export default function UserForm({
             placeholder="Address"
             rows={3}
           />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="role_id">Role *</Label>
-          <Select
-            value={formData.role_id}
-            onValueChange={(value) => setFormData((prev) => ({ ...prev, role_id: value }))}
-            required
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">Admin</SelectItem>
-              <SelectItem value="2">Customer</SelectItem>
-              <SelectItem value="3">Driver</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="space-y-2">
