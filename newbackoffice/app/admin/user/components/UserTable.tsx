@@ -117,10 +117,8 @@ export default function UserTable({
             <TableHead>Username</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
-            <TableHead>Contact Info</TableHead>
             <TableHead>Bank</TableHead>
             <TableHead>Account Number</TableHead>
-            <TableHead>Address</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Created At</TableHead>
             <TableHead>Updated At</TableHead>
@@ -141,12 +139,9 @@ export default function UserTable({
                 <TableCell>{user.username}</TableCell>
                 <TableCell>{user.email || '-'}</TableCell>
                 <TableCell>{user.phone || '-'}</TableCell>
-                <TableCell>{user.contact_info || '-'}</TableCell>
                 <TableCell>{user.bank || '-'}</TableCell>
                 <TableCell>{user.account_number || '-'}</TableCell>
-                <TableCell className="max-w-xs truncate" title={user.address || ''}>
-                  {user.address || '-'}
-                </TableCell>
+               
                 <TableCell>
                   <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">
                     {getRoleLabel(user.role_id)}

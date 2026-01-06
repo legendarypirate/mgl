@@ -9,12 +9,41 @@ exports.create = async (req, res) => {
   // Validate request
   if (!req.body.username || !req.body.role_id || !req.body.password) {
     res.status(400).send({
+      success: false,
       message: "Content can not be empty!"
     });
     return;
   }
 
   try {
+    // Check if username already exists
+    const existingUserByUsername = await User.findOne({
+      where: { username: req.body.username }
+    });
+
+    if (existingUserByUsername) {
+      res.status(400).send({
+        success: false,
+        message: "Username already exists. Please choose a different username."
+      });
+      return;
+    }
+
+    // Check if phone already exists (if phone is provided)
+    if (req.body.phone) {
+      const existingUserByPhone = await User.findOne({
+        where: { phone: req.body.phone }
+      });
+
+      if (existingUserByPhone) {
+        res.status(400).send({
+          success: false,
+          message: "Phone number already exists. Please use a different phone number."
+        });
+        return;
+      }
+    }
+
     // Hash the password
     const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
 
@@ -33,9 +62,13 @@ exports.create = async (req, res) => {
 
     // Save User in the database
     const data = await User.create(user);
-    res.send(data);
+    res.send({
+      success: true,
+      data: data
+    });
   } catch (err) {
     res.status(500).send({
+      success: false,
       message: err.message || "Some error occurred while creating the User."
     });
   }
@@ -125,42 +158,75 @@ exports.findOne = (req, res) => {
 };
 
 // Update a User by the id in the request
-exports.update = (req, res) => {
+exports.update = async (req, res) => {
   const id = req.params.id;
 
-  User.update(req.body, {
-    where: { id: id }
-  })
-    .then(num => {
-      if (num == 1) {
-        // Fetch and return the updated user data
-        User.findByPk(id)
-          .then(data => {
-            res.send({
-              success: true,
-              data: data,
-              message: "User was updated successfully."
-            });
-          })
-          .catch(err => {
-            res.status(500).send({
-              success: false,
-              message: "Error fetching updated user data: " + err
-            });
-          });
-      } else {
-        res.status(404).send({
-          success: false,
-          message: `Cannot update User with id=${id}. Maybe User was not found or req.body is empty!`
-        });
-      }
-    })
-    .catch(err => {
-      res.status(500).send({
-        success: false,
-        message: "Error updating User with id=" + id
+  try {
+    // Check if username already exists (excluding current user)
+    if (req.body.username) {
+      const existingUserByUsername = await User.findOne({
+        where: {
+          username: req.body.username,
+          id: { [Op.ne]: id }
+        }
       });
+
+      if (existingUserByUsername) {
+        res.status(400).send({
+          success: false,
+          message: "Username already exists. Please choose a different username."
+        });
+        return;
+      }
+    }
+
+    // Check if phone already exists (excluding current user, if phone is provided)
+    if (req.body.phone) {
+      const existingUserByPhone = await User.findOne({
+        where: {
+          phone: req.body.phone,
+          id: { [Op.ne]: id }
+        }
+      });
+
+      if (existingUserByPhone) {
+        res.status(400).send({
+          success: false,
+          message: "Phone number already exists. Please use a different phone number."
+        });
+        return;
+      }
+    }
+
+    // If password is being updated, hash it
+    if (req.body.password) {
+      req.body.password = await bcrypt.hash(req.body.password, saltRounds);
+    }
+
+    const [num] = await User.update(req.body, {
+      where: { id: id }
     });
+
+    if (num == 1) {
+      // Fetch and return the updated user data
+      const data = await User.findByPk(id);
+      res.send({
+        success: true,
+        data: data,
+        message: "User was updated successfully."
+      });
+    } else {
+      res.status(404).send({
+        success: false,
+        message: `Cannot update User with id=${id}. Maybe User was not found or req.body is empty!`
+      });
+    }
+  } catch (err) {
+    res.status(500).send({
+      success: false,
+      message: "Error updating User with id=" + id + ": " + err.message
+    });
+  }
 };
 // Delete a User with the specified id in the request
 exports.delete = (req, res) => {

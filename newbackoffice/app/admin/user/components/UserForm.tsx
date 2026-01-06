@@ -14,16 +14,20 @@ import {
 import { X } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
+import { User } from '../types/user';
+
 interface UserFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => Promise<void>;
+  user?: User | null;
 }
 
 export default function UserForm({
   isOpen,
   onClose,
   onSubmit,
+  user,
 }: UserFormProps) {
   const [formData, setFormData] = useState({
     username: '',
@@ -40,19 +44,35 @@ export default function UserForm({
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        username: '',
-        email: '',
-        phone: '',
-        bank: '',
-        account_number: '',
-        contact_info: '',
-        address: '',
-        role_id: '',
-        password: '',
-      });
+      if (user) {
+        // Edit mode - populate form with user data
+        setFormData({
+          username: user.username || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          bank: user.bank || '',
+          account_number: user.account_number || '',
+          contact_info: user.contact_info || '',
+          address: user.address || '',
+          role_id: user.role_id?.toString() || '',
+          password: '', // Don't populate password for security
+        });
+      } else {
+        // Create mode - reset form
+        setFormData({
+          username: '',
+          email: '',
+          phone: '',
+          bank: '',
+          account_number: '',
+          contact_info: '',
+          address: '',
+          role_id: '',
+          password: '',
+        });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +80,7 @@ export default function UserForm({
 
     setIsSubmitting(true);
     try {
-      const payload = {
+      const payload: any = {
         username: formData.username,
         email: formData.email || undefined,
         phone: formData.phone || undefined,
@@ -69,8 +89,12 @@ export default function UserForm({
         contact_info: formData.contact_info || undefined,
         address: formData.address || undefined,
         role_id: parseInt(formData.role_id),
-        password: formData.password,
       };
+      
+      // Only include password if it's provided (for edit mode) or required (for create mode)
+      if (formData.password) {
+        payload.password = formData.password;
+      }
 
       await onSubmit(payload);
       onClose();
@@ -86,7 +110,7 @@ export default function UserForm({
   return (
     <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl border-l z-50 overflow-y-auto">
       <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
-        <h2 className="text-xl font-semibold">Хэрэглэгч үүсгэх</h2>
+        <h2 className="text-xl font-semibold">{user ? 'Хэрэглэгч засах' : 'Хэрэглэгч үүсгэх'}</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-5 w-5" />
         </Button>
@@ -185,14 +209,14 @@ export default function UserForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">Password *</Label>
+          <Label htmlFor="password">Password {user ? '' : '*'}</Label>
           <Input
             id="password"
             type="password"
             value={formData.password}
             onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-            placeholder="Password"
-            required
+            placeholder={user ? 'Leave empty to keep current password' : 'Password'}
+            required={!user}
           />
         </div>
 

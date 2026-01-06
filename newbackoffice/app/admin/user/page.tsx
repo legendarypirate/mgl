@@ -15,13 +15,14 @@ import {
 } from '@/components/ui/select';
 import { Search } from 'lucide-react';
 import { User } from './types/user';
-import { fetchUsers, createUser, deleteUser } from './services/user.service';
+import { fetchUsers, createUser, updateUser, deleteUser } from './services/user.service';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState({
     current: 1,
@@ -91,9 +92,29 @@ export default function UsersPage() {
       await createUser(payload);
       toast.success('Хэрэглэгч амжилттай үүслээ');
       setIsDrawerOpen(false);
+      setEditingUser(null);
       fetchData();
     } catch (error: any) {
       toast.error(error.message || 'Хэрэглэгч үүсгэхэд алдаа гарлаа');
+    }
+  };
+
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setIsDrawerOpen(true);
+  };
+
+  const handleUpdateUser = async (payload: any) => {
+    if (!editingUser) return;
+    
+    try {
+      await updateUser(editingUser.id, payload);
+      toast.success('Хэрэглэгч амжилттай шинэчлэгдлээ');
+      setIsDrawerOpen(false);
+      setEditingUser(null);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Хэрэглэгч шинэчлэхэд алдаа гарлаа');
     }
   };
 
@@ -125,12 +146,16 @@ export default function UsersPage() {
           </div>
         </div>
 
-        <Button onClick={() => setIsDrawerOpen(true)}>+ Хэрэглэгч үүсгэх</Button>
+        <Button onClick={() => {
+          setEditingUser(null);
+          setIsDrawerOpen(true);
+        }}>+ Хэрэглэгч үүсгэх</Button>
       </div>
 
       <UserTable
         users={currentPageData}
         loading={loading}
+        onEdit={handleEdit}
         onDelete={handleDelete}
       />
 
@@ -186,8 +211,12 @@ export default function UsersPage() {
       {/* Drawer */}
       <UserForm
         isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        onSubmit={handleCreateUser}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setEditingUser(null);
+        }}
+        onSubmit={editingUser ? handleUpdateUser : handleCreateUser}
+        user={editingUser}
       />
     </div>
   );

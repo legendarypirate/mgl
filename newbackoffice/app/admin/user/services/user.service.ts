@@ -33,10 +33,33 @@ export const createUser = async (payload: CreateUserPayload): Promise<User> => {
   });
 
   const result = await response.json();
-  if (result.success || response.ok) {
+  
+  // Check if request was successful
+  if (result.success && response.ok) {
     return result.data || result;
   }
+  
+  // Throw error with message from backend
   throw new Error(result.message || 'Failed to create user');
+};
+
+// Update user
+export const updateUser = async (userId: number, payload: Partial<CreateUserPayload>): Promise<User> => {
+  const response = await fetch(`${API_URL}/api/user/${userId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const result = await response.json();
+  
+  // Check if request was successful
+  if (result.success && response.ok) {
+    return result.data || result;
+  }
+  
+  // Throw error with message from backend
+  throw new Error(result.message || 'Failed to update user');
 };
 
 // Delete user

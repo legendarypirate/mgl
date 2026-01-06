@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs"); // Using bcryptjs for hashing and comparing passwords
 const db = require("../models");
+const { Op } = require("sequelize");
 const User = db.users;  // Assuming your users table is named 'users'
 const secretKey = 'your_secret_key';  // You can store this key in .env for better security
 const axios = require("axios");
@@ -52,14 +53,24 @@ exports.register = async (req, res) => {
 
 // Login user without role restriction
 exports.login = async (req, res) => {
-  const { username, password } = req.body;
+  const { username, phone, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ message: "Username and password are required!" });
+  // Accept either username or phone, but require at least one
+  const identifier = username || phone;
+  if (!identifier || !password) {
+    return res.status(400).json({ message: "Username or phone and password are required!" });
   }
 
   try {
-    const user = await User.findOne({ where: { username } });
+    // Search for user by either username or phone
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [
+          { username: identifier },
+          { phone: identifier }
+        ]
+      }
+    });
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials!" });
     }

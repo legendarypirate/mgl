@@ -130,16 +130,18 @@ exports.findMerchantDelivery = (req, res) => {
     return res.status(400).send({ success: false, message: "Missing user_id" });
   }
 
-  // Current timestamp in Ulaanbaatar time
+  // Current timestamp in Ulaanbaatar time (+8)
   const now = new Date();
-  const ulaanbaatarOffset = 8 * 60; // +8 hours
+  const ulaanbaatarOffset = 8 * 60;
   const localNow = new Date(now.getTime() + ulaanbaatarOffset * 60 * 1000);
+
   const sevenDaysAgo = new Date(localNow);
   sevenDaysAgo.setDate(localNow.getDate() - 7);
 
   Delivery.findAll({
     where: {
       merchant_id: userId,
+      is_deleted: { [Op.ne]: true }, // ✅ added condition
       createdAt: {
         [Op.between]: [sevenDaysAgo, localNow],
       },
@@ -148,11 +150,13 @@ exports.findMerchantDelivery = (req, res) => {
   })
     .then((data) => res.send({ success: true, data }))
     .catch((err) =>
-      res
-        .status(500)
-        .send({ success: false, message: err.message || "Error fetching deliveries" })
+      res.status(500).send({
+        success: false,
+        message: err.message || "Error fetching deliveries",
+      })
     );
 };
+
 exports.findByDeliverId = async (req, res) => {
     const { deliveryId } = req.params;
   
@@ -242,8 +246,8 @@ exports.report = async (req, res) => {
         [fn('DATE', col('delivered_at')), 'date'],
         [fn('COUNT', col('id')), 'delivered_count'],
         [fn('SUM', col('price')), 'delivered_total_price'],
-        [literal('COUNT(*) * 4000'), 'for_driver'],
-        [literal('SUM(price) - (COUNT(*) * 4000)'), 'driver_margin'],
+        [literal('COUNT(*) * 5000'), 'for_driver'],
+        [literal('SUM(price) - (COUNT(*) * 5000)'), 'driver_margin'],
       ],
       group: [fn('DATE', col('delivered_at'))],
       raw: true,
@@ -323,7 +327,7 @@ exports.completeDelivery = async (req, res) => {
     });
 
     // ✅ If declined (status 5), move from in_delivery back to stock
-    if (statusInt === 5) {
+    if (statusInt === 4) {
       for (const item of items) {
         if (!item.good_id) continue;
         const good = await Good.findByPk(item.good_id, { transaction: t });

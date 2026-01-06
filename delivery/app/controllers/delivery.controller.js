@@ -453,6 +453,17 @@ exports.findAll = async (req, res) => {
         { model: User, as: "merchant", attributes: ["username"] },
         { model: Status, as: "status_name", attributes: ["status", "color"] },
         { model: User, as: "driver", attributes: ["username"] },
+        {
+          model: DeliveryItem,
+          as: "items",
+          include: [
+            {
+              model: Good,
+              as: "good",
+              attributes: ["name"],
+            },
+          ],
+        },
       ],
       order: [["id", "DESC"]],
     });

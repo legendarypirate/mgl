@@ -5,7 +5,7 @@ import { Delivery, DeliveryItem } from '../types/delivery';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Eye, ChevronDown, ChevronRight } from 'lucide-react';
+import { Edit, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -40,6 +40,14 @@ export default function DeliveryTable({
   const isRowExpanded = (id: number) => expandedRowKeys.includes(id);
   const allSelected = deliveries.length > 0 && selectedRowKeys.length === deliveries.length;
   const someSelected = selectedRowKeys.length > 0 && selectedRowKeys.length < deliveries.length;
+
+  const formatGoodsList = (delivery: Delivery): string => {
+    const items = delivery.items || expandedItems[delivery.id] || [];
+    if (items.length === 0) return '-';
+    return items
+      .map((item) => `${item.good?.name || 'Unknown'} - ${item.quantity}`)
+      .join(', ');
+  };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -78,7 +86,7 @@ export default function DeliveryTable({
               <TableHead>Үнэ</TableHead>
               <TableHead>Төлбөр</TableHead>
               <TableHead>Хөдөө</TableHead>
-              <TableHead>Тайлбар</TableHead>
+              <TableHead>Бараа</TableHead>
               <TableHead>Ж/тайлбар</TableHead>
               {!isMerchant && <TableHead>Жолооч нэр</TableHead>}
               {!isMerchant && <TableHead>Үйлдэл</TableHead>}
@@ -131,8 +139,7 @@ export default function DeliveryTable({
             <TableHead>Утас / Хаяг</TableHead>
             <TableHead>Төлөв</TableHead>
             <TableHead>Үнэ</TableHead>
-          
-            <TableHead>Тайлбар</TableHead>
+            <TableHead>Бараа</TableHead>
             <TableHead>Ж/тайлбар</TableHead>
             {!isMerchant && <TableHead>Жолооч нэр</TableHead>}
             {!isMerchant && <TableHead>Үйлдэл</TableHead>}
@@ -198,7 +205,11 @@ export default function DeliveryTable({
                     </Badge>
                   </TableCell>
                   <TableCell>{delivery.price?.toLocaleString() || 0}</TableCell>
-                  <TableCell className="max-w-xs truncate">{delivery.comment || '-'}</TableCell>
+                  <TableCell className="max-w-xs">
+                    <div className="text-sm" title={formatGoodsList(delivery)}>
+                      {formatGoodsList(delivery)}
+                    </div>
+                  </TableCell>
                   <TableCell className="max-w-xs">
                     <div
                       className="text-xs truncate"
@@ -232,20 +243,6 @@ export default function DeliveryTable({
                           }}
                         >
                           <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onExpand(!isRowExpanded(delivery.id), delivery);
-                          }}
-                        >
-                          {isRowExpanded(delivery.id) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
                         </Button>
                       </div>
                     </TableCell>
