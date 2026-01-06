@@ -6,6 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { X } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import { User } from '../types/user';
 
@@ -31,13 +38,14 @@ export default function UserForm({
     contact_info: '',
     address: '',
     password: '',
+    role_id: '', // No default - user must select
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       if (user) {
-        // Edit mode - populate form with user data
+        // Edit mode - populate form with user data (no role_id)
         setFormData({
           username: user.username || '',
           email: user.email || '',
@@ -47,6 +55,7 @@ export default function UserForm({
           contact_info: user.contact_info || '',
           address: user.address || '',
           password: '', // Don't populate password for security
+          role_id: '', // No role selection in edit mode
         });
       } else {
         // Create mode - reset form
@@ -59,6 +68,7 @@ export default function UserForm({
           contact_info: '',
           address: '',
           password: '',
+          role_id: '', // No default - user must select
         });
       }
     }
@@ -67,6 +77,12 @@ export default function UserForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    // Validate role_id is selected when creating
+    if (!user && !formData.role_id) {
+      alert('Please select a role');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -79,6 +95,11 @@ export default function UserForm({
         contact_info: formData.contact_info || undefined,
         address: formData.address || undefined,
       };
+      
+      // Only include role_id when creating (not when editing)
+      if (!user && formData.role_id) {
+        payload.role_id = parseInt(formData.role_id);
+      }
       
       // Only include password if it's provided (for edit mode) or required (for create mode)
       if (formData.password) {
@@ -178,6 +199,27 @@ export default function UserForm({
             rows={3}
           />
         </div>
+
+        {/* Role selection - only show when creating (not editing) */}
+        {!user && (
+          <div className="space-y-2">
+            <Label htmlFor="role_id">Role *</Label>
+            <Select
+              value={formData.role_id || undefined}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, role_id: value }))}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Admin</SelectItem>
+                <SelectItem value="2">Customer</SelectItem>
+                <SelectItem value="3">Driver</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="password">Password {user ? '' : '*'}</Label>
