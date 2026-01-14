@@ -56,7 +56,7 @@ const menuItems: MenuItemType[] = [
     permission: "good:view_good",
     children: [
       { key: "/admin/good", label: "Барааны жагсаалт", permission: "good:view_good" },
-      { key: "/admin/request", label: "Барааны хүсэлт", permission: "good:view_good" },
+      { key: "/admin/good-request", label: "Барааны хүсэлт", permission: "good:view_good" },
     ],
   },
   {

@@ -7,6 +7,7 @@ import GoodForm from './components/GoodForm';
 import { StockUpdateModal } from './components/GoodModals';
 import { GoodHistoryModal } from './components/GoodHistoryModal';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -30,6 +31,7 @@ export default function GoodPage() {
   const [filteredGoods, setFilteredGoods] = useState<Good[]>([]);
   const [loading, setLoading] = useState(false);
   const [merchantFilter, setMerchantFilter] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Form/Drawer
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -84,23 +86,31 @@ export default function GoodPage() {
     loadData();
   }, [isMerchant, merchantId]);
 
-  // Filter goods by merchant
+  // Filter goods by merchant and search term
   useEffect(() => {
+    let filtered = goods;
+
+    // Filter by merchant
     if (merchantFilter) {
-      setFilteredGoods(goods.filter((good) => good.merchant.id === merchantFilter));
-    } else {
-      setFilteredGoods(goods);
+      filtered = filtered.filter((good) => good.merchant.id === merchantFilter);
     }
-  }, [merchantFilter, goods]);
+
+    // Filter by search term (good name)
+    if (searchTerm.trim()) {
+      filtered = filtered.filter((good) =>
+        good.name.toLowerCase().includes(searchTerm.toLowerCase().trim())
+      );
+    }
+
+    setFilteredGoods(filtered);
+  }, [merchantFilter, searchTerm, goods]);
 
   // Handlers
   const handleCreateGood = async (payload: any) => {
     try {
       const newGood = await createGood(payload);
       setGoods((prev) => [...prev, newGood]);
-      if (!merchantFilter || newGood.merchant.id === merchantFilter) {
-        setFilteredGoods((prev) => [...prev, newGood]);
-      }
+      // The filteredGoods will be updated automatically by the useEffect
       toast.success('Бараа амжилттай үүсгэгдлээ');
       setIsDrawerOpen(false);
     } catch (error: any) {
@@ -192,7 +202,7 @@ export default function GoodPage() {
       </div>
 
       {!isMerchant && (
-        <div className="mb-4">
+        <div className="mb-4 flex items-center gap-4">
           <Select
             value={merchantFilter?.toString() || 'all'}
             onValueChange={(value) => setMerchantFilter(value === 'all' ? null : parseInt(value))}
@@ -209,6 +219,24 @@ export default function GoodPage() {
               ))}
             </SelectContent>
           </Select>
+          <Input
+            type="text"
+            placeholder="Барааны нэрээр хайх..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-64"
+          />
+        </div>
+      )}
+      {isMerchant && (
+        <div className="mb-4">
+          <Input
+            type="text"
+            placeholder="Барааны нэрээр хайх..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-64"
+          />
         </div>
       )}
 

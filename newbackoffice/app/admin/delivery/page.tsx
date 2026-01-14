@@ -488,51 +488,70 @@ function DeliveryPageContent() {
             <head>
               <title>Print</title>
               <style>
-                body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-                .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                body { font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: 18px; }
+                .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; font-size: 20px; }
                 .logo { max-width: 200px; height: auto; margin-bottom: 10px; }
-                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 9px; }
-                th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; }
-                th { background-color: #f5f5f5; font-weight: bold; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 16px; }
+                th, td { border: 1px solid #ccc; padding: 10px 12px; text-align: left; }
+                th { background-color: #f5f5f5; font-weight: bold; font-size: 18px; }
                 @page { size: A4 portrait; margin: 10mm; }
               </style>
             </head>
             <body>
               <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div style="flex: 1;">
-                  <img src="/uguujlogo.png" alt="Logo" class="logo" onerror="this.style.display='none'">
-                </div>
-                ${uniqueDrivers ? `<div style="flex: 1; text-align: right;"><div style="font-weight: bold;">Жолооч:</div><div>${uniqueDrivers}</div></div>` : ''}
+             
+                ${uniqueDrivers ? `<div style="flex: 1; text-align: left; font-size: 18px;"><div style="font-weight: bold;">Жолооч:</div><div>${uniqueDrivers}</div></div>` : ''}
               </div>
               <table>
                 <thead>
                   <tr>
                     <th>Дэлгүүр</th>
-                    <th>Хаяг</th>
                     <th>Утас</th>
-                    <th>Үнэ</th>
                     <th>Бараа</th>
-                    <th>Тайлбар</th>
+                    <th>Тоо</th>
+                    <th>Үнэ</th>
+                    <th>Хаяг</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${rowsWithItems
-                    .map(
-                      (row) => `
-                    <tr>
-                      <td>${row.merchant?.username ?? '-'}</td>
-                      <td>${row.address}</td>
-                      <td>${row.phone}</td>
-                      <td>${row.price?.toLocaleString() ?? '0'}₮</td>
-                      <td>${row.items && row.items.length > 0 ? row.items.map((item: any) => `${item.good?.name || 'Unknown'} (${item.quantity})`).join(', ') : 'Бараа байхгүй'}</td>
-                      <td>${row.comment ?? '-'}</td>
-                    </tr>
-                  `
-                    )
+                    .map((row) => {
+                      const items = row.items || [];
+                      if (items.length === 0) {
+                        return `
+                          <tr>
+                            <td>${row.merchant?.username ?? '-'}</td>
+                            <td>${row.phone}</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>${row.price?.toLocaleString() ?? '0'}₮</td>
+                            <td>${row.address}</td>
+                          </tr>
+                        `;
+                      }
+                      return items
+                        .map(
+                          (item: any, index: number) => `
+                          <tr ${index > 0 ? 'style="border-top: 1px solid #ddd;"' : ''}>
+                            ${index === 0 ? `
+                              <td rowspan="${items.length}">${row.merchant?.username ?? '-'}</td>
+                              <td rowspan="${items.length}">${row.phone}</td>
+                            ` : ''}
+                            <td>${item.good?.name || 'Unknown'}</td>
+                            <td>${item.quantity}</td>
+                            ${index === 0 ? `
+                              <td rowspan="${items.length}">${row.price?.toLocaleString() ?? '0'}₮</td>
+                              <td rowspan="${items.length}">${row.address}</td>
+                            ` : ''}
+                          </tr>
+                        `
+                        )
+                        .join('');
+                    })
                     .join('')}
                 </tbody>
               </table>
-              <div style="margin-top: 20px; text-align: right; font-size: 10px;">
+              <div style="margin-top: 20px; text-align: right; font-size: 18px; font-weight: bold;">
                 Нийт: ${rowsWithItems.length} хүргэлт
               </div>
             </body>

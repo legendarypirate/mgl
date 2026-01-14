@@ -41,14 +41,6 @@ export default function DeliveryTable({
   const allSelected = deliveries.length > 0 && selectedRowKeys.length === deliveries.length;
   const someSelected = selectedRowKeys.length > 0 && selectedRowKeys.length < deliveries.length;
 
-  const formatGoodsList = (delivery: Delivery): string => {
-    const items = delivery.items || expandedItems[delivery.id] || [];
-    if (items.length === 0) return '-';
-    return items
-      .map((item) => `${item.good?.name || 'Unknown'} - ${item.quantity}`)
-      .join(', ');
-  };
-
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       onRowSelect(deliveries.map((d) => d.id));
@@ -81,12 +73,12 @@ export default function DeliveryTable({
               <TableHead>Үүссэн огноо</TableHead>
               <TableHead>Хүргэсэн огноо</TableHead>
               {!isMerchant && <TableHead>Мерчанд нэр</TableHead>}
-              <TableHead>Утас / Хаяг</TableHead>
+              <TableHead>Бараа</TableHead>
+              <TableHead>Тоо ширхэг</TableHead>
+              <TableHead>Утас</TableHead>
+              <TableHead>Хаяг</TableHead>
               <TableHead>Төлөв</TableHead>
               <TableHead>Үнэ</TableHead>
-              <TableHead>Төлбөр</TableHead>
-              <TableHead>Хөдөө</TableHead>
-              <TableHead>Бараа</TableHead>
               <TableHead>Ж/тайлбар</TableHead>
               {!isMerchant && <TableHead>Жолооч нэр</TableHead>}
               {!isMerchant && <TableHead>Үйлдэл</TableHead>}
@@ -100,12 +92,12 @@ export default function DeliveryTable({
                 <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                 {!isMerchant && <TableCell><Skeleton className="h-4 w-24" /></TableCell>}
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-12" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                 {!isMerchant && <TableCell><Skeleton className="h-4 w-20" /></TableCell>}
                 {!isMerchant && <TableCell><Skeleton className="h-4 w-16" /></TableCell>}
@@ -134,12 +126,13 @@ export default function DeliveryTable({
               />
             </TableHead>
             <TableHead>Үүссэн огноо</TableHead>
-            <TableHead>Хүргэсэн огноо</TableHead>
             {!isMerchant && <TableHead>Мерчанд нэр</TableHead>}
-            <TableHead>Утас / Хаяг</TableHead>
+            <TableHead>Бараа</TableHead>
+            <TableHead>Тоо</TableHead>
+            <TableHead>Утас</TableHead>
+            <TableHead>Хаяг</TableHead>
             <TableHead>Төлөв</TableHead>
             <TableHead>Үнэ</TableHead>
-            <TableHead>Бараа</TableHead>
             <TableHead>Ж/тайлбар</TableHead>
             {!isMerchant && <TableHead>Жолооч нэр</TableHead>}
             {!isMerchant && <TableHead>Үйлдэл</TableHead>}
@@ -148,109 +141,227 @@ export default function DeliveryTable({
         <TableBody>
           {deliveries.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={isMerchant ? 12 : 14} className="text-center text-gray-400 py-8">
+              <TableCell colSpan={isMerchant ? 10 : 12} className="text-center text-gray-400 py-8">
                 Хүргэлт олдсонгүй
               </TableCell>
             </TableRow>
           ) : (
-            deliveries.map((delivery) => (
-              <React.Fragment key={delivery.id}>
-                <TableRow
-                  className={`cursor-pointer ${
-                    isRowSelected(delivery.id) ? 'bg-blue-50' : ''
-                  }`}
-                  onClick={(e) => handleRowClick(e, delivery)}
-                >
-                  <TableCell>
-                    <input
-                      type="checkbox"
-                      checked={isRowSelected(delivery.id)}
-                      onChange={() => {
-                        const newKeys = isRowSelected(delivery.id)
-                          ? selectedRowKeys.filter((key) => key !== delivery.id)
-                          : [...selectedRowKeys, delivery.id];
-                        onRowSelect(newKeys);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="rounded"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {delivery.createdAt
-                      ? format(new Date(delivery.createdAt), 'yyyy-MM-dd hh:mm a')
-                      : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {delivery.delivered_at
-                      ? format(new Date(delivery.delivered_at), 'yyyy-MM-dd hh:mm a')
-                      : '-'}
-                  </TableCell>
-                  {!isMerchant && (
-                    <TableCell>{delivery.merchant?.username || '-'}</TableCell>
-                  )}
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{delivery.phone}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{delivery.address}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      style={{
-                        backgroundColor: delivery.status_name.color,
-                        color: 'white',
-                      }}
+            deliveries.map((delivery) => {
+              const items = delivery.items || expandedItems[delivery.id] || [];
+              const hasItems = items.length > 0;
+              
+              return (
+                <React.Fragment key={delivery.id}>
+                  {hasItems ? (
+                    items.map((item, itemIndex) => (
+                      <TableRow
+                        key={`${delivery.id}-${itemIndex}`}
+                        className={`cursor-pointer ${
+                          isRowSelected(delivery.id) ? 'bg-blue-50' : ''
+                        } ${itemIndex > 0 ? 'border-t border-gray-300' : ''}`}
+                        onClick={(e) => handleRowClick(e, delivery)}
+                      >
+                        {itemIndex === 0 && (
+                          <>
+                            <TableCell rowSpan={items.length}>
+                              <input
+                                type="checkbox"
+                                checked={isRowSelected(delivery.id)}
+                                onChange={() => {
+                                  const newKeys = isRowSelected(delivery.id)
+                                    ? selectedRowKeys.filter((key) => key !== delivery.id)
+                                    : [...selectedRowKeys, delivery.id];
+                                  onRowSelect(newKeys);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="rounded"
+                              />
+                            </TableCell>
+                            <TableCell rowSpan={items.length}>
+                              {delivery.createdAt
+                                ? format(new Date(delivery.createdAt), 'yyyy-MM-dd hh:mm a')
+                                : '-'}
+                            </TableCell>
+                          
+                            {!isMerchant && (
+                              <TableCell rowSpan={items.length}>
+                                {delivery.merchant?.username || '-'}
+                              </TableCell>
+                            )}
+                          </>
+                        )}
+                        <TableCell className="max-w-xs">
+                          <div className="text-sm">
+                            {item.good?.name || 'Unknown'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {item.quantity}
+                          </div>
+                        </TableCell>
+                        {itemIndex === 0 && (
+                          <>
+                            <TableCell rowSpan={items.length}>
+                              <div className="font-medium">{delivery.phone}</div>
+                            </TableCell>
+                            <TableCell rowSpan={items.length}>
+                              <div className="text-base text-gray-700">{delivery.address}</div>
+                            </TableCell>
+                            <TableCell rowSpan={items.length}>
+                              <Badge
+                                style={{
+                                  backgroundColor: delivery.status_name.color,
+                                  color: 'white',
+                                }}
+                              >
+                                {delivery.status_name.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell rowSpan={items.length}>
+                              {delivery.price?.toLocaleString() || 0}
+                            </TableCell>
+                          </>
+                        )}
+                        {itemIndex === 0 && (
+                          <>
+                            <TableCell className="max-w-xs" rowSpan={items.length}>
+                              <div
+                                className="text-xs truncate"
+                                title={delivery.driver_comment || ''}
+                              >
+                                {delivery.driver_comment || 'Тайлбаргүй'}
+                              </div>
+                            </TableCell>
+                            {!isMerchant && (
+                              <TableCell rowSpan={items.length}>
+                                {delivery.driver?.username || '-'}
+                              </TableCell>
+                            )}
+                            {!isMerchant && (
+                              <TableCell rowSpan={items.length}>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onEdit(delivery);
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onViewHistory(delivery.id);
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            )}
+                          </>
+                        )}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow
+                      className={`cursor-pointer ${
+                        isRowSelected(delivery.id) ? 'bg-blue-50' : ''
+                      }`}
+                      onClick={(e) => handleRowClick(e, delivery)}
                     >
-                      {delivery.status_name.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{delivery.price?.toLocaleString() || 0}</TableCell>
-                  <TableCell className="max-w-xs">
-                    <div className="text-sm" title={formatGoodsList(delivery)}>
-                      {formatGoodsList(delivery)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="max-w-xs">
-                    <div
-                      className="text-xs truncate"
-                      title={delivery.driver_comment || ''}
-                    >
-                      {delivery.driver_comment || 'Тайлбаргүй'}
-                    </div>
-                  </TableCell>
-                  {!isMerchant && (
-                    <TableCell>{delivery.driver?.username || '-'}</TableCell>
-                  )}
-                  {!isMerchant && (
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit(delivery);
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={isRowSelected(delivery.id)}
+                          onChange={() => {
+                            const newKeys = isRowSelected(delivery.id)
+                              ? selectedRowKeys.filter((key) => key !== delivery.id)
+                              : [...selectedRowKeys, delivery.id];
+                            onRowSelect(newKeys);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="rounded"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {delivery.createdAt
+                          ? format(new Date(delivery.createdAt), 'yyyy-MM-dd hh:mm a')
+                          : '-'}
+                      </TableCell>
+                      {!isMerchant && (
+                        <TableCell>{delivery.merchant?.username || '-'}</TableCell>
+                      )}
+                      <TableCell className="max-w-xs">
+                        <div className="text-sm">-</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">-</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{delivery.phone}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-base text-gray-700">{delivery.address}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          style={{
+                            backgroundColor: delivery.status_name.color,
+                            color: 'white',
                           }}
                         >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onViewHistory(delivery.id);
-                          }}
+                          {delivery.status_name.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{delivery.price?.toLocaleString() || 0}</TableCell>
+                      <TableCell className="max-w-xs">
+                        <div
+                          className="text-xs truncate"
+                          title={delivery.driver_comment || ''}
                         >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                          {delivery.driver_comment || 'Тайлбаргүй'}
+                        </div>
+                      </TableCell>
+                      {!isMerchant && (
+                        <TableCell>{delivery.driver?.username || '-'}</TableCell>
+                      )}
+                      {!isMerchant && (
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(delivery);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onViewHistory(delivery.id);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
                   )}
-                </TableRow>
                 {isRowExpanded(delivery.id) && (
                   <TableRow>
-                    <TableCell colSpan={isMerchant ? 12 : 14}>
+                    <TableCell colSpan={isMerchant ? 10 : 12}>
                       {loadingRows.includes(delivery.id) ? (
                         <div className="p-4 text-center">Loading items...</div>
                       ) : (
@@ -281,7 +392,8 @@ export default function DeliveryTable({
                   </TableRow>
                 )}
               </React.Fragment>
-            ))
+              );
+            })
           )}
         </TableBody>
       </Table>

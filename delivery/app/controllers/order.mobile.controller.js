@@ -6,11 +6,20 @@ const Status = db.statuses;
 
 exports.findDriverDeliveriesWithStatus = (req, res) => {
     const driverId = req.params.id;
+    const status = parseInt(req.query.status) || 2; // Default to status 2 if not provided
+  
+    // Status text mapping
+    const statusTextMap = {
+      1: "Шинэ",
+      2: "Жолоочид хуваарилсан",
+      3: "Хүргэгдсэн",
+      4: "Буцаасан"
+    };
   
     Order.findAll({
       where: {
         driver_id: driverId,
-        status: 2
+        status: status
       },
       include: [
         {
@@ -24,7 +33,7 @@ exports.findDriverDeliveriesWithStatus = (req, res) => {
       const result = data.map(order => {
         return {
           ...order.toJSON(),
-          status_text: "Жолоочид хуваарилсан"
+          status_text: statusTextMap[status] || `Status ${status}`
         };
       });
   

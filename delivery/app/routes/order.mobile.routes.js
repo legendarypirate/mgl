@@ -10,6 +10,8 @@ module.exports = app => {
 
     // Mark order as complete
     router.get("/driver/:id/status-2", order.findDriverDeliveriesWithStatus);
+    // Get orders by status (supports query parameter ?status=1,2,3,4)
+    router.get("/driver/:id/status", order.findDriverDeliveriesWithStatus);
 
     app.use('/api/mobile/order', router);
 };

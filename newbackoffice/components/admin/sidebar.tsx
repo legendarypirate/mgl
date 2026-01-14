@@ -111,6 +111,12 @@ const menuItems: MenuItemType[] = [
         icon: <ShoppingCart className="w-4 h-4" />,
         label: "Барааны жагсаалт",
         permission: "good:view_good",
+      },
+      {
+        key: "/admin/good-request",
+        icon: <FileText className="w-4 h-4" />,
+        label: "Барааны хүсэлт",
+        permission: "good:view_good",
       }
     ],
   },

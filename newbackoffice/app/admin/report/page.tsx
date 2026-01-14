@@ -20,6 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { SearchableSelect, SearchableSelectOption } from '@/components/ui/searchable-select';
 import { fetchReportDeliveries } from './services/report.service';
 import { fetchDrivers, fetchMerchants } from '../delivery/services/delivery.service';
 import { Delivery, User } from '../delivery/types/delivery';
@@ -225,43 +226,37 @@ export default function ReportPage() {
 
         {/* Conditional Select - Driver or Merchant */}
         {reportType === 'driver' ? (
-          <Select
+          <SearchableSelect
+            options={[
+              { value: 'all', label: 'All Drivers' },
+              ...drivers.map((driver) => ({
+                value: driver.id.toString(),
+                label: driver.username,
+              })),
+            ]}
             value={selectedId?.toString() || 'all'}
             onValueChange={(value) =>
               setSelectedId(value === 'all' ? null : parseInt(value))
             }
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select Driver" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Drivers</SelectItem>
-              {drivers.map((driver) => (
-                <SelectItem key={driver.id} value={driver.id.toString()}>
-                  {driver.username}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder="Select Driver"
+            className="w-48"
+          />
         ) : (
-          <Select
+          <SearchableSelect
+            options={[
+              { value: 'all', label: 'All Merchants' },
+              ...merchants.map((merchant) => ({
+                value: merchant.id.toString(),
+                label: merchant.username,
+              })),
+            ]}
             value={selectedId?.toString() || 'all'}
             onValueChange={(value) =>
               setSelectedId(value === 'all' ? null : parseInt(value))
             }
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select Merchant" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Merchants</SelectItem>
-              {merchants.map((merchant) => (
-                <SelectItem key={merchant.id} value={merchant.id.toString()}>
-                  {merchant.username}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder="Select Merchant"
+            className="w-48"
+          />
         )}
 
         {/* Submit Button */}

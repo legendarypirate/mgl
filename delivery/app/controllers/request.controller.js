@@ -90,6 +90,7 @@ exports.create = (req, res) => {
   // Approve request
   exports.approve = async (req, res) => {
     const requestId = req.params.id;
+    const { stock: editedStock } = req.body; // Optional edited stock amount
   
     try {
       const request = await Request.findByPk(requestId);
@@ -98,15 +99,25 @@ exports.create = (req, res) => {
         return res.status(404).json({ success: false, message: 'Request not found.' });
       }
   
-      // Update status to approved
-      await request.update({ status: 2 });
+      // Use edited stock if provided, otherwise use original request stock
+      const stockToUse = editedStock !== undefined && editedStock !== null 
+        ? parseFloat(editedStock) 
+        : request.stock;
+  
+      // Validate stock amount
+      if (stockToUse <= 0) {
+        return res.status(400).json({ success: false, message: 'Stock amount must be greater than 0.' });
+      }
+
+      // Update status to approved and save approved stock
+      await request.update({ status: 2, approved_stock: stockToUse });
   
       // Process based on type
       if (request.type === 1) {
         // Type 1: Create new good
         await Good.create({
           name: request.name,
-          stock: request.stock,
+          stock: stockToUse,
           merchant_id: request.merchant_id,
           ware_id: request.ware_id,
         });
@@ -117,7 +128,7 @@ exports.create = (req, res) => {
         if (!good) {
           return res.status(404).json({ success: false, message: 'Good not found.' });
         }
-        await good.update({ stock: good.stock + request.stock });
+        await good.update({ stock: good.stock + stockToUse });
   
       } else if (request.type === 3) {
         // Type 3: Reduce stock from existing good
@@ -126,11 +137,11 @@ exports.create = (req, res) => {
           return res.status(404).json({ success: false, message: 'Good not found.' });
         }
   
-        if (good.stock < request.stock) {
+        if (good.stock < stockToUse) {
           return res.status(400).json({ success: false, message: 'Not enough stock to reduce.' });
         }
   
-        await good.update({ stock: good.stock - request.stock });
+        await good.update({ stock: good.stock - stockToUse });
       }
   
       return res.json({ success: true, message: 'Request approved and processed successfully.' });
@@ -163,7 +174,7 @@ exports.findAll = async (req, res) => {
     const merchant_id = req.query.merchant_id;
   
     // Build condition only if merchant_id exists
-    const condition = merchant_id ? { merchant_id: merchant_id } : undefined;
+    const condition = merchant_id ? { merchant_id: parseInt(merchant_id) } : undefined;
   
     try {
       const data = await Request.findAll({

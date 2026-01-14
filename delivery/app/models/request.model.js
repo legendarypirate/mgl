@@ -11,6 +11,11 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.INTEGER,
         defaultValue: 0,
       },
+      approved_stock: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+      },
       status: {
         type: Sequelize.INTEGER,
         defaultValue: 0,
