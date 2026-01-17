@@ -42,6 +42,7 @@ export interface Delivery {
   } | null;
   createdAt: string;
   delivered_at?: string;
+  delivery_date?: string;
   merchant: {
     username: string;
   };
@@ -111,6 +112,7 @@ export interface CreateDeliveryPayload {
   is_rural: boolean;
   price: number;
   comment: string;
+  delivery_date?: string;
   items: Array<{
     good_id: string;
     quantity: number;
@@ -121,5 +123,6 @@ export interface UpdateDeliveryPayload {
   phone: string;
   address: string;
   price: number;
+  delivery_date?: string;
 }
 

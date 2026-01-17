@@ -70,7 +70,7 @@ export default function DeliveryTable({
                 <Skeleton className="h-4 w-4" />
               </TableHead>
               <TableHead>ID</TableHead>
-              <TableHead>Үүссэн огноо</TableHead>
+              <TableHead>Хүргэх огноо</TableHead>
               <TableHead>Хүргэсэн огноо</TableHead>
               {!isMerchant && <TableHead>Мерчанд нэр</TableHead>}
               <TableHead>Бараа</TableHead>
@@ -125,7 +125,7 @@ export default function DeliveryTable({
                 className="rounded"
               />
             </TableHead>
-            <TableHead>Үүссэн огноо</TableHead>
+            <TableHead>Хүргэх огноо</TableHead>
             {!isMerchant && <TableHead>Мерчанд нэр</TableHead>}
             <TableHead>Бараа</TableHead>
             <TableHead>Тоо</TableHead>
@@ -178,8 +178,10 @@ export default function DeliveryTable({
                               />
                             </TableCell>
                             <TableCell rowSpan={items.length}>
-                              {delivery.createdAt
-                                ? format(new Date(delivery.createdAt), 'yyyy-MM-dd hh:mm a')
+                              {delivery.delivery_date
+                                ? format(new Date(delivery.delivery_date), 'yyyy-MM-dd')
+                                : delivery.createdAt
+                                ? format(new Date(delivery.createdAt), 'yyyy-MM-dd')
                                 : '-'}
                             </TableCell>
                           
@@ -290,8 +292,10 @@ export default function DeliveryTable({
                         />
                       </TableCell>
                       <TableCell>
-                        {delivery.createdAt
-                          ? format(new Date(delivery.createdAt), 'yyyy-MM-dd hh:mm a')
+                        {delivery.delivery_date
+                          ? format(new Date(delivery.delivery_date), 'yyyy-MM-dd')
+                          : delivery.createdAt
+                          ? format(new Date(delivery.createdAt), 'yyyy-MM-dd')
                           : '-'}
                       </TableCell>
                       {!isMerchant && (

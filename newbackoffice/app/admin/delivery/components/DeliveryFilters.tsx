@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { DeliveryStatus, User, District } from '../types/delivery';
 import { Upload, Plus, ChevronDown } from 'lucide-react';
+import { formatDateLocal } from '@/lib/utils';
 
 interface DeliveryFiltersProps {
   phoneFilter: string;
@@ -127,7 +128,7 @@ export default function DeliveryFilters({
       <div className="flex items-center gap-2">
         <Input
           type="date"
-          value={dateRange[0] ? dateRange[0].toISOString().split('T')[0] : ''}
+          value={dateRange[0] ? formatDateLocal(dateRange[0]) : ''}
           onChange={(e) => {
             const start = e.target.value ? new Date(e.target.value) : null;
             onDateRangeChange([start, dateRange[1]]);
@@ -137,7 +138,7 @@ export default function DeliveryFilters({
         <span className="text-gray-500">-</span>
         <Input
           type="date"
-          value={dateRange[1] ? dateRange[1].toISOString().split('T')[0] : ''}
+          value={dateRange[1] ? formatDateLocal(dateRange[1]) : ''}
           onChange={(e) => {
             const end = e.target.value ? new Date(e.target.value) : null;
             onDateRangeChange([dateRange[0], end]);

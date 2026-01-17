@@ -58,6 +58,42 @@ exports.status = async (req, res) => {
   }
 };
 
+exports.updateDeliveryDates = async (req, res) => {
+  const { delivery_date, delivery_ids } = req.body;
+
+  if (!delivery_date || !Array.isArray(delivery_ids) || delivery_ids.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Delivery date and a list of delivery IDs are required.",
+    });
+  }
+
+  try {
+    // Bulk update the delivery dates
+    await Delivery.update(
+      {
+        delivery_date: delivery_date,
+      },
+      {
+        where: {
+          id: delivery_ids,
+        },
+      }
+    );
+
+    res.json({
+      success: true,
+      message: "Delivery dates updated successfully.",
+    });
+  } catch (error) {
+    console.error("Error updating delivery dates:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating delivery dates.",
+    });
+  }
+};
+
 // GET /api/delivery/:id/history
 exports.getDeliveryHistory = async (req, res) => {
   const deliveryId = req.params.id;
@@ -205,6 +241,7 @@ exports.create = async (req, res) => {
       is_rural: req.body.is_rural ?? false,
       price: req.body.price,
       comment: req.body.comment || '',
+      delivery_date: req.body.delivery_date || null,
     };
 
     const delivery = await Delivery.create(newDel, { transaction: t });
@@ -429,18 +466,15 @@ exports.findAll = async (req, res) => {
       if (statusArray.length > 0) where.status = { [Op.in]: statusArray };
     }
 
-    // 🗓️ Date Filter (Ulaanbaatar Time)
-    const tzOffsetMinutes = 8 * 60; // GMT+8
-    let filterStart, filterEnd;
-
+    // 🗓️ Delivery Date Filter - use start_date and end_date to filter by delivery_date column
     if (start_date && end_date) {
-      // Convert to Mongolia local time explicitly
-      filterStart = new Date(`${start_date}T00:00:00+08:00`);
-      filterEnd = new Date(`${end_date}T23:59:59+08:00`);
-
-      // Filter by createdAt to include all deliveries created in the date range
-      // This ensures deliveries without delivered_at are still included
-      where.createdAt = { [Op.between]: [filterStart, filterEnd] };
+      where.delivery_date = {
+        [Op.between]: [start_date, end_date],
+      };
+    } else if (start_date) {
+      where.delivery_date = { [Op.gte]: start_date };
+    } else if (end_date) {
+      where.delivery_date = { [Op.lte]: end_date };
     }
 
     // 🔍 Query database
@@ -605,19 +639,19 @@ exports.update = (req, res) => {
   const id = req.params.id;
 
   // Validate request (ensure at least one field is provided)
-  if (!req.body.phone && !req.body.address && !req.body.price) {
+  if (!req.body.phone && !req.body.address && req.body.price === undefined && !req.body.delivery_date) {
     return res.status(400).json({
       success: false,
-      message: "Request body cannot be empty. At least brand or nature is required.",
+      message: "Request body cannot be empty. At least one field is required.",
     });
   }
 
   // Prepare the data for updating
-  const updateData = {
-    phone: req.body.phone || null,
-    address: req.body.address || null,
-    price: req.body.price || null,
-  };
+  const updateData = {};
+  if (req.body.phone !== undefined) updateData.phone = req.body.phone;
+  if (req.body.address !== undefined) updateData.address = req.body.address;
+  if (req.body.price !== undefined) updateData.price = req.body.price === '' ? 0 : req.body.price;
+  if (req.body.delivery_date !== undefined) updateData.delivery_date = req.body.delivery_date || null;
 
   // Update the category entry in the database
   Delivery.update(updateData, { where: { id: id } })

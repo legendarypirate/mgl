@@ -76,6 +76,11 @@ module.exports = (sequelize, Sequelize) => {
         allowNull: true,
         defaultValue: null,
       },
+      delivery_date: {
+        type: Sequelize.DATEONLY,
+        allowNull: true,
+        defaultValue: null,
+      },
     });
   
     return Delivery;

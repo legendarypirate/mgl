@@ -11,6 +11,7 @@ import {
   StatusChangeModal,
   HistoryModal,
   EditModal,
+  DeliveryDateModal,
 } from './components/DeliveryModals';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,6 +41,7 @@ import {
   deleteDeliveries,
   allocateDeliveries,
   changeDeliveryStatus,
+  updateDeliveryDates,
   fetchMerchants,
   fetchDrivers,
   fetchStatuses,
@@ -48,6 +50,7 @@ import {
   fetchRegions,
 } from './services/delivery.service';
 import { useSearchParams } from 'next/navigation';
+import { formatDateLocal, getTodayLocal } from '@/lib/utils';
 
 const DISTRICTS: District[] = [
   { id: 1, name: 'Баянзүрх' },
@@ -78,7 +81,11 @@ function DeliveryPageContent() {
   const [driverFilter, setDriverFilter] = useState<number | null>(null);
   const [districtFilter, setDistrictFilter] = useState<number | null>(null);
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>(initialStatusIds);
-  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return [today, today];
+  });
 
   // Form/Drawer
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -90,12 +97,14 @@ function DeliveryPageContent() {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeliveryDateModalOpen, setIsDeliveryDateModalOpen] = useState(false);
   const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
   const [selectedStatusId, setSelectedStatusId] = useState<number | null>(null);
+  const [bulkDeliveryDate, setBulkDeliveryDate] = useState('');
   const [deliveryHistory, setDeliveryHistory] = useState<DeliveryHistory[]>([]);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
-  const [editFormData, setEditFormData] = useState({ phone: '', address: '', price: '' });
+  const [editFormData, setEditFormData] = useState({ phone: '', address: '', price: '', delivery_date: '' });
 
   // Expanded rows
   const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]);
@@ -161,8 +170,8 @@ function DeliveryPageContent() {
           driverId: driverFilter || undefined,
           districtId: districtFilter || undefined,
           statusIds: selectedStatuses.length > 0 ? selectedStatuses : undefined,
-          startDate: dateRange[0] ? dateRange[0].toISOString().split('T')[0] : undefined,
-          endDate: dateRange[1] ? dateRange[1].toISOString().split('T')[0] : undefined,
+          startDate: dateRange[0] ? formatDateLocal(dateRange[0]) : undefined,
+          endDate: dateRange[1] ? formatDateLocal(dateRange[1]) : undefined,
         };
 
         const result = await fetchDeliveries(filters, pagination);
@@ -236,7 +245,8 @@ function DeliveryPageContent() {
       await updateDelivery(selectedDelivery.id, {
         phone: editFormData.phone,
         address: editFormData.address,
-        price: Number(editFormData.price),
+        price: editFormData.price === '' ? 0 : Number(editFormData.price),
+        delivery_date: editFormData.delivery_date || undefined,
       });
       toast.success('Амжилттай шинэчлэгдлээ');
       setIsEditModalOpen(false);
@@ -335,6 +345,44 @@ function DeliveryPageContent() {
     setIsStatusModalOpen(true);
   };
 
+  const handleDeliveryDateChange = async () => {
+    if (selectedRowKeys.length === 0) {
+      toast.warning('Хамгийн багадаа нэг хүргэлт сонгоно уу');
+      return;
+    }
+    const today = getTodayLocal();
+    setBulkDeliveryDate(today);
+    setIsDeliveryDateModalOpen(true);
+  };
+
+  const handleSaveDeliveryDate = async () => {
+    if (!bulkDeliveryDate) {
+      toast.warning('Огноо сонгоно уу!');
+      return;
+    }
+    try {
+      await updateDeliveryDates(bulkDeliveryDate, selectedRowKeys);
+      toast.success('Амжилттай өөрчлөгдлөө');
+      setIsDeliveryDateModalOpen(false);
+      setBulkDeliveryDate('');
+      setSelectedRowKeys([]);
+      // Refresh deliveries
+      const filters: Filters = {
+        phone: phoneFilter || undefined,
+        merchantId: merchantFilter || (isMerchant ? merchantId : undefined),
+        driverId: driverFilter || undefined,
+        districtId: districtFilter || undefined,
+        statusIds: selectedStatuses.length > 0 ? selectedStatuses : undefined,
+        startDate: dateRange[0] ? dateRange[0].toISOString().split('T')[0] : undefined,
+        endDate: dateRange[1] ? dateRange[1].toISOString().split('T')[0] : undefined,
+      };
+      const result = await fetchDeliveries(filters, pagination);
+      setDeliveries(result.data);
+    } catch (error) {
+      toast.error('Огноо өөрчлөхөд алдаа гарлаа');
+    }
+  };
+
   const handleSaveStatusChange = async () => {
     if (!selectedStatusId) {
       toast.warning('Төлөв сонгоно уу!');
@@ -375,10 +423,14 @@ function DeliveryPageContent() {
 
   const handleEditClick = (delivery: Delivery) => {
     setSelectedDelivery(delivery);
+    const deliveryDate = delivery.delivery_date 
+      ? formatDateLocal(new Date(delivery.delivery_date))
+      : getTodayLocal();
     setEditFormData({
       phone: delivery.phone,
       address: delivery.address,
       price: delivery.price.toString(),
+      delivery_date: deliveryDate,
     });
     setIsEditModalOpen(true);
   };
@@ -424,8 +476,8 @@ function DeliveryPageContent() {
           driverId: driverFilter || undefined,
           districtId: districtFilter || undefined,
           statusIds: selectedStatuses.length > 0 ? selectedStatuses : undefined,
-          startDate: dateRange[0] ? dateRange[0].toISOString().split('T')[0] : undefined,
-          endDate: dateRange[1] ? dateRange[1].toISOString().split('T')[0] : undefined,
+          startDate: dateRange[0] ? formatDateLocal(dateRange[0]) : undefined,
+          endDate: dateRange[1] ? formatDateLocal(dateRange[1]) : undefined,
         };
         const result2 = await fetchDeliveries(filters, pagination);
         setDeliveries(result2.data);
@@ -715,6 +767,12 @@ function DeliveryPageContent() {
                 Төлөв солих
               </Button>
               <Button
+                onClick={handleDeliveryDateChange}
+                disabled={selectedRowKeys.length === 0}
+              >
+                Хүргэх огноо тохируулах
+              </Button>
+              <Button
                 variant="outline"
                 onClick={handlePrint}
                 disabled={selectedRowKeys.length === 0}
@@ -794,6 +852,17 @@ function DeliveryPageContent() {
         delivery={selectedDelivery}
         formData={editFormData}
         onFormDataChange={setEditFormData}
+      />
+
+      <DeliveryDateModal
+        isOpen={isDeliveryDateModalOpen}
+        onClose={() => {
+          setIsDeliveryDateModalOpen(false);
+          setBulkDeliveryDate('');
+        }}
+        onSave={handleSaveDeliveryDate}
+        deliveryDate={bulkDeliveryDate}
+        onDeliveryDateChange={setBulkDeliveryDate}
       />
     </div>
   );

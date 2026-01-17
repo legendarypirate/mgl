@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { ProductItem, User, District } from '../types/delivery';
 import { Plus, Trash2 } from 'lucide-react';
+import { getTodayLocal } from '@/lib/utils';
 
 interface DeliveryFormProps {
   isOpen: boolean;
@@ -53,6 +54,7 @@ export default function DeliveryForm({
     price: '',
     is_paid: false,
     is_rural: false,
+    delivery_date: '',
   });
 
   const [selectedProduct, setSelectedProduct] = useState<string>('');
@@ -64,6 +66,7 @@ export default function DeliveryForm({
 
   useEffect(() => {
     if (isOpen) {
+      const today = getTodayLocal();
       setFormData({
         merchantId: merchantId?.toString() || '',
         phone: '',
@@ -72,6 +75,7 @@ export default function DeliveryForm({
         price: '',
         is_paid: false,
         is_rural: false,
+        delivery_date: today,
       });
       setProductList([]);
       setSelectedProduct('');
@@ -145,6 +149,7 @@ export default function DeliveryForm({
         is_rural: formData.is_rural,
         price: Number(formData.price),
         comment: '',
+        delivery_date: formData.delivery_date || undefined,
         items: productList.map((item) => ({
           good_id: item.productId,
           quantity: item.quantity,
@@ -244,6 +249,17 @@ export default function DeliveryForm({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="delivery_date">Хүргэх огноо *</Label>
+          <Input
+            id="delivery_date"
+            type="date"
+            value={formData.delivery_date}
+            onChange={(e) => setFormData((prev) => ({ ...prev, delivery_date: e.target.value }))}
+            required
+          />
         </div>
 
         <div className="space-y-2">

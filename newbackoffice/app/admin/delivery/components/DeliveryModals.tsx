@@ -199,8 +199,8 @@ interface EditModalProps {
   onClose: () => void;
   onSave: () => void;
   delivery: Delivery | null;
-  formData: { phone: string; address: string; price: string };
-  onFormDataChange: (data: { phone: string; address: string; price: string }) => void;
+  formData: { phone: string; address: string; price: string; delivery_date: string };
+  onFormDataChange: (data: { phone: string; address: string; price: string; delivery_date: string }) => void;
 }
 
 export function EditModal({
@@ -245,10 +245,68 @@ export function EditModal({
             <Input
               id="edit-price"
               type="number"
+              min="0"
+              step="0.01"
               value={formData.price}
               onChange={(e) =>
                 onFormDataChange({ ...formData, price: e.target.value })
               }
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-delivery_date">Хүргэх огноо *</Label>
+            <Input
+              id="edit-delivery_date"
+              type="date"
+              value={formData.delivery_date}
+              onChange={(e) =>
+                onFormDataChange({ ...formData, delivery_date: e.target.value })
+              }
+              required
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Цуцлах
+          </Button>
+          <Button onClick={onSave}>Хадгалах</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface DeliveryDateModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  deliveryDate: string;
+  onDeliveryDateChange: (date: string) => void;
+}
+
+export function DeliveryDateModal({
+  isOpen,
+  onClose,
+  onSave,
+  deliveryDate,
+  onDeliveryDateChange,
+}: DeliveryDateModalProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Хүргэх огноо тохируулах</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="bulk-delivery_date">Хүргэх огноо *</Label>
+            <Input
+              id="bulk-delivery_date"
+              type="date"
+              value={deliveryDate}
+              onChange={(e) => onDeliveryDateChange(e.target.value)}
               required
             />
           </div>

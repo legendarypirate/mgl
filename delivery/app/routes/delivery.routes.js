@@ -4,6 +4,7 @@ module.exports = app => {
     var router = require("express").Router();
     router.get("/statistic", delivery.statistic);
   router.post("/status", delivery.status);
+  router.post("/update-delivery-dates", delivery.updateDeliveryDates);
 
     router.post("/allocate", delivery.allocateDeliveries);
     router.get("/findAllWithDate", delivery.findAllWithDate);

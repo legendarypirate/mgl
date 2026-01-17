@@ -167,6 +167,26 @@ export const changeDeliveryStatus = async (
   }
 };
 
+// Update delivery dates in bulk
+export const updateDeliveryDates = async (
+  deliveryDate: string,
+  deliveryIds: React.Key[]
+): Promise<void> => {
+  const response = await fetch(`${API_URL}/api/delivery/update-delivery-dates`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      delivery_date: deliveryDate,
+      delivery_ids: deliveryIds,
+    }),
+  });
+
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.message || 'Failed to update delivery dates');
+  }
+};
+
 // Fetch merchants
 export const fetchMerchants = async (): Promise<User[]> => {
   const response = await fetch(`${API_URL}/api/user/merchant`, {
