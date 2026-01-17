@@ -36,7 +36,6 @@ export default function GoodForm({
 }: GoodFormProps) {
   const [formData, setFormData] = useState({
     name: '',
-    stock: '',
     merchant_id: merchantId?.toString() || '',
     ware_id: '',
   });
@@ -46,7 +45,6 @@ export default function GoodForm({
     if (isOpen) {
       setFormData({
         name: '',
-        stock: '',
         merchant_id: merchantId?.toString() || '',
         ware_id: '',
       });
@@ -61,7 +59,7 @@ export default function GoodForm({
     try {
       const payload = {
         name: formData.name,
-        stock: Number(formData.stock),
+        stock: 0,
         merchant_id: isMerchant ? merchantId : parseInt(formData.merchant_id),
         ware_id: parseInt(formData.ware_id),
       };
@@ -94,19 +92,6 @@ export default function GoodForm({
             value={formData.name}
             onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="Барааны нэр"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="stock">Үлдэгдэл *</Label>
-          <Input
-            id="stock"
-            type="number"
-            min={0}
-            value={formData.stock}
-            onChange={(e) => setFormData((prev) => ({ ...prev, stock: e.target.value }))}
-            placeholder="Үлдэгдэл"
             required
           />
         </div>

@@ -182,8 +182,7 @@ exports.create = async (req, res) => {
   if (
     !req.body.merchant_id ||
     !req.body.phone ||
-    !req.body.address ||
-    !req.body.comment
+    !req.body.address
   ) {
     return res.status(400).send({
       message: "Content can not be empty!",
@@ -205,7 +204,7 @@ exports.create = async (req, res) => {
       is_paid: req.body.is_paid ?? false,
       is_rural: req.body.is_rural ?? false,
       price: req.body.price,
-      comment: req.body.comment,
+      comment: req.body.comment || '',
     };
 
     const delivery = await Delivery.create(newDel, { transaction: t });
@@ -724,13 +723,53 @@ exports.delete = (req, res) => {
 
 exports.deleteMultiple = async (req, res) => {
   const { ids } = req.body;
+  const t = await db.sequelize.transaction();
+  
   try {
+    // Get all delivery items for the deliveries being deleted
+    const items = await DeliveryItem.findAll({
+      where: { delivery_id: ids },
+      transaction: t,
+    });
+
+    // Restore stock for each item
+    for (const item of items) {
+      if (!item.good_id) continue;
+      const good = await Good.findByPk(item.good_id, { transaction: t });
+      if (!good) continue;
+
+      // Move from in_delivery back to stock
+      await good.update(
+        {
+          stock: (good.stock || 0) + item.quantity,
+          in_delivery: Math.max(0, (good.in_delivery || 0) - item.quantity),
+        },
+        { transaction: t }
+      );
+
+      // Create history record
+      await db.good_histories.create(
+        {
+          good_id: item.good_id,
+          type: 4, // Delivery cancelled (back to stock)
+          amount: item.quantity,
+          delivery_id: item.delivery_id,
+          comment: `Админ устгасан (Delivery ID: ${item.delivery_id})`,
+        },
+        { transaction: t }
+      );
+    }
+
+    // Mark deliveries as deleted
     await Delivery.update(
       { is_deleted: true },
-      { where: { id: ids } }
+      { where: { id: ids }, transaction: t }
     );
+
+    await t.commit();
     res.json({ success: true });
   } catch (err) {
+    await t.rollback();
     res.status(500).json({ success: false, message: err.message });
   }
 };

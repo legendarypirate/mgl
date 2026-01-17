@@ -51,7 +51,6 @@ export default function DeliveryForm({
     address: '',
     dist_id: '',
     price: '',
-    comment: '',
     is_paid: false,
     is_rural: false,
   });
@@ -71,7 +70,6 @@ export default function DeliveryForm({
         address: '',
         dist_id: '',
         price: '',
-        comment: '',
         is_paid: false,
         is_rural: false,
       });
@@ -146,7 +144,7 @@ export default function DeliveryForm({
         is_paid: formData.is_paid,
         is_rural: formData.is_rural,
         price: Number(formData.price),
-        comment: formData.comment,
+        comment: '',
         items: productList.map((item) => ({
           good_id: item.productId,
           quantity: item.quantity,
@@ -257,17 +255,6 @@ export default function DeliveryForm({
             onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
             placeholder="Үнэ"
             disabled={priceDisabled}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="comment">Тайлбар *</Label>
-          <Textarea
-            id="comment"
-            value={formData.comment}
-            onChange={(e) => setFormData((prev) => ({ ...prev, comment: e.target.value }))}
-            placeholder="Тайлбар"
             required
           />
         </div>
