@@ -46,7 +46,7 @@ export default function GoodTable({
               <TableHead>Үлдэгдэл</TableHead>
               <TableHead>Хүргэлтэнд</TableHead>
               <TableHead>Хүргэгдсэн</TableHead>
-              <TableHead>Үйлдэл</TableHead>
+              {!isMerchant && <TableHead>Үйлдэл</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -75,6 +75,11 @@ export default function GoodTable({
                 <TableCell>
                   <Skeleton className="h-4 w-16" />
                 </TableCell>
+                {!isMerchant && (
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
@@ -94,13 +99,13 @@ export default function GoodTable({
             <TableHead>Үлдэгдэл</TableHead>
             <TableHead>Хүргэлтэнд</TableHead>
             <TableHead>Хүргэгдсэн</TableHead>
-            <TableHead>Үйлдэл</TableHead>
+            {!isMerchant && <TableHead>Үйлдэл</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {goods.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={isMerchant ? 6 : 7} className="text-center text-gray-400 py-8">
+              <TableCell colSpan={isMerchant ? 5 : 7} className="text-center text-gray-400 py-8">
                 Бараа олдсонгүй
               </TableCell>
             </TableRow>
@@ -113,36 +118,38 @@ export default function GoodTable({
                 <TableCell>{good.stock || 0}</TableCell>
                 <TableCell>{good.in_delivery || 0}</TableCell>
                 <TableCell>{good.delivered || 0}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEdit(good)}
-                      title="Орлогодох"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    {onHistory && (
+                {!isMerchant && (
+                  <TableCell>
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onHistory(good)}
-                        title="Түүх харах"
+                        onClick={() => onEdit(good)}
+                        title="Орлогодох"
                       >
-                        <History className="h-4 w-4" />
+                        <Edit className="h-4 w-4" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(good)}
-                      title="Устгах"
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                </TableCell>
+                      {onHistory && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onHistory(good)}
+                          title="Түүх харах"
+                        >
+                          <History className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDelete(good)}
+                        title="Устгах"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))
           )}

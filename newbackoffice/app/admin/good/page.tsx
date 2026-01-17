@@ -198,7 +198,9 @@ export default function GoodPage() {
     <div className="w-full mt-6 px-4 pb-32">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Агуулахын бараа</h1>
-        <Button onClick={() => setIsDrawerOpen(true)}>+ Бараа үүсгэх</Button>
+        {!isMerchant && (
+          <Button onClick={() => setIsDrawerOpen(true)}>+ Бараа үүсгэх</Button>
+        )}
       </div>
 
       {!isMerchant && (
