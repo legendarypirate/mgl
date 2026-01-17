@@ -557,6 +557,7 @@ function DeliveryPageContent() {
               <table>
                 <thead>
                   <tr>
+                    <th>#</th>
                     <th>Дэлгүүр</th>
                     <th>Утас</th>
                     <th>Бараа</th>
@@ -567,11 +568,13 @@ function DeliveryPageContent() {
                 </thead>
                 <tbody>
                   ${rowsWithItems
-                    .map((row) => {
+                    .map((row, rowIndex) => {
                       const items = row.items || [];
+                      const rowNumber = rowIndex + 1;
                       if (items.length === 0) {
                         return `
                           <tr>
+                            <td>${rowNumber}</td>
                             <td>${row.merchant?.username ?? '-'}</td>
                             <td>${row.phone}</td>
                             <td>-</td>
@@ -586,6 +589,7 @@ function DeliveryPageContent() {
                           (item: any, index: number) => `
                           <tr ${index > 0 ? 'style="border-top: 1px solid #ddd;"' : ''}>
                             ${index === 0 ? `
+                              <td rowspan="${items.length}">${rowNumber}</td>
                               <td rowspan="${items.length}">${row.merchant?.username ?? '-'}</td>
                               <td rowspan="${items.length}">${row.phone}</td>
                             ` : ''}

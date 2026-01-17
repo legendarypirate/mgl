@@ -82,7 +82,7 @@ export default function DeliveryFilters({
           <SelectValue placeholder="Жолоочноор шүүх" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Бүгд</SelectItem>
+          <SelectItem value="all">Жолооч</SelectItem>
           {drivers.map((driver) => (
             <SelectItem key={driver.id} value={driver.id.toString()}>
               {driver.username}
@@ -99,7 +99,7 @@ export default function DeliveryFilters({
           <SelectValue placeholder="Дүүргээр шүүх" />
         </SelectTrigger>
         <SelectContent className="min-w-[var(--radix-select-trigger-width)]">
-          <SelectItem value="all">Бүгд</SelectItem>
+          <SelectItem value="all">Дүүрэг</SelectItem>
           {districts.map((district) => (
             <SelectItem key={district.id} value={district.id.toString()}>
               {district.name}
@@ -116,7 +116,7 @@ export default function DeliveryFilters({
           <SelectValue placeholder="Мерчандаар шүүх" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Бүгд</SelectItem>
+          <SelectItem value="all">Дэлгүүр</SelectItem>
           {merchants.map((merchant) => (
             <SelectItem key={merchant.id} value={merchant.id.toString()}>
               {merchant.username}
