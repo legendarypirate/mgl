@@ -40,6 +40,8 @@ exports.createRequest = async (req, res) => {
         good_id:good_id ,
         merchant_id,
         name, // for create type
+      }, {
+        fields: ['type', 'stock', 'status', 'ware_id', 'good_id', 'merchant_id', 'name'] // Explicitly exclude approved_stock
       });
   
       return res.status(201).json({
@@ -78,7 +80,9 @@ exports.create = (req, res) => {
     };
   
     // Save Categories in the database
-    Request.create(cat)
+    Request.create(cat, {
+      fields: ['ware_id', 'merchant_id', 'stock', 'status', 'name', 'type'] // Explicitly exclude approved_stock
+    })
     .then(data => {
       res.json({ success: true, data: data });
     })
