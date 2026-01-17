@@ -114,7 +114,7 @@ export default function ReportPage() {
             (sum, d) => sum + parseFloat(d.price.toString()),
             0
           );
-          const salary = deliveredCount * 5000;
+          const salary = deliveredCount * (reportType === 'driver' ? 5000 : 7000);
 
           const name =
             reportType === 'driver'
@@ -270,26 +270,27 @@ export default function ReportPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date Range</TableHead>
+              <TableHead>Огноо</TableHead>
               <TableHead>
-                {reportType === 'driver' ? 'Driver Name' : 'Merchant Name'}
+                {reportType === 'driver' ? 'Жолооч' : 'Дэлгүүр'}
               </TableHead>
-              <TableHead>Delivered Deliveries</TableHead>
-              <TableHead>Total Deliveries</TableHead>
-              <TableHead>Total Price</TableHead>
-              <TableHead>Salary</TableHead>
+              <TableHead>Хүргэсэн хүргэлт</TableHead>
+              <TableHead>Нийт хүргэлт</TableHead>
+              <TableHead>Нийт тооцоо</TableHead>
+              <TableHead>Цалин</TableHead>
+              <TableHead>зөрүү</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : reportData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                   No data available for the selected filters
                 </TableCell>
               </TableRow>
@@ -303,6 +304,9 @@ export default function ReportPage() {
                   <TableCell>{formatCurrency(row.totalPrice)} ₮</TableCell>
                   <TableCell className="font-semibold">
                     {formatCurrency(row.salary)} ₮
+                  </TableCell>
+                  <TableCell className="font-semibold">
+                    {formatCurrency(row.totalPrice - row.salary)} ₮
                   </TableCell>
                 </TableRow>
               ))
