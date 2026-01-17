@@ -52,25 +52,7 @@ export function DriverAllocationModal({
           <DialogTitle>Жолооч сонгох</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Орон нутаг</Label>
-            <Select
-              value={selectedRegionId?.toString() || 'all'}
-              onValueChange={(value) => onRegionSelect(value === 'all' ? null : parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Орон нутаг сонгох" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Бүгд</SelectItem>
-                {regions.map((region) => (
-                  <SelectItem key={region.id} value={region.id.toString()}>
-                    {region.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+         
           <div className="space-y-2">
             <Label>Жолооч</Label>
             <Select
