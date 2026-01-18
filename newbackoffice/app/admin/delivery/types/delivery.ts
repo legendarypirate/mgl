@@ -53,6 +53,7 @@ export interface Delivery {
   items?: DeliveryItem[];
   is_paid: boolean;
   is_rural: boolean;
+  delivery_image?: string | null;
 }
 
 export interface DeliveryStatus {

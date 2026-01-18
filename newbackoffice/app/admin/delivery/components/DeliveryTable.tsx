@@ -5,9 +5,10 @@ import { Delivery, DeliveryItem } from '../types/delivery';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Eye } from 'lucide-react';
+import { Edit, Eye, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface DeliveryTableProps {
   deliveries: Delivery[];
@@ -36,6 +37,7 @@ export default function DeliveryTable({
   onExpand,
   isMerchant = false,
 }: DeliveryTableProps) {
+  const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
   const isRowSelected = (id: number) => selectedRowKeys.includes(id);
   const isRowExpanded = (id: number) => expandedRowKeys.includes(id);
   const allSelected = deliveries.length > 0 && selectedRowKeys.length === deliveries.length;
@@ -110,8 +112,9 @@ export default function DeliveryTable({
   }
 
   return (
-    <div className="border rounded-md">
-      <Table>
+    <React.Fragment>
+      <div className="border rounded-md">
+        <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="w-12">
@@ -263,6 +266,18 @@ export default function DeliveryTable({
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Button>
+                                  {delivery.delivery_image && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedImage(delivery.delivery_image || null);
+                                      }}
+                                    >
+                                      <ImageIcon className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                 </div>
                               </TableCell>
                             )}
@@ -358,6 +373,18 @@ export default function DeliveryTable({
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
+                            {delivery.delivery_image && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedImage(delivery.delivery_image || null);
+                                }}
+                              >
+                                <ImageIcon className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       )}
@@ -402,6 +429,21 @@ export default function DeliveryTable({
         </TableBody>
       </Table>
     </div>
+    
+    <Dialog open={!!selectedImage} onOpenChange={(open) => !open && setSelectedImage(null)}>
+      <DialogContent className="max-w-4xl">
+        {selectedImage && (
+          <div className="flex justify-center items-center">
+            <img
+              src={selectedImage}
+              alt="Delivery Image"
+              className="max-w-full max-h-[80vh] object-contain rounded-lg"
+            />
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </React.Fragment>
   );
 }
 
