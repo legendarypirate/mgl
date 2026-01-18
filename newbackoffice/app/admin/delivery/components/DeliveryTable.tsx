@@ -212,8 +212,7 @@ export default function DeliveryTable({
                             </TableCell>
                             <TableCell rowSpan={items.length} className="max-w-xs">
                               <div 
-                                className="text-base text-gray-700 truncate"
-                                title={delivery.address || ''}
+                                className="text-base text-gray-700 whitespace-normal break-words"
                               >
                                 {delivery.address}
                               </div>
@@ -237,8 +236,7 @@ export default function DeliveryTable({
                           <>
                             <TableCell className="max-w-xs" rowSpan={items.length}>
                               <div
-                                className="text-xs truncate"
-                                title={delivery.driver_comment || ''}
+                                className="text-xs whitespace-normal break-words"
                               >
                                 {delivery.driver_comment || 'Тайлбаргүй'}
                               </div>
@@ -332,8 +330,7 @@ export default function DeliveryTable({
                       </TableCell>
                       <TableCell className="max-w-xs">
                         <div 
-                          className="text-base text-gray-700 truncate"
-                          title={delivery.address || ''}
+                          className="text-base text-gray-700 whitespace-normal break-words"
                         >
                           {delivery.address}
                         </div>
@@ -351,8 +348,7 @@ export default function DeliveryTable({
                       <TableCell>{delivery.price?.toLocaleString() || 0}</TableCell>
                       <TableCell className="max-w-xs">
                         <div
-                          className="text-xs truncate"
-                          title={delivery.driver_comment || ''}
+                          className="text-xs whitespace-normal break-words"
                         >
                           {delivery.driver_comment || 'Тайлбаргүй'}
                         </div>
