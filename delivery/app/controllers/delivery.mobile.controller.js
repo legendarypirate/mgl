@@ -13,9 +13,9 @@ const path = require('path');
 
 // Configure Cloudinary (you'll need to set these in environment variables)
 cloudinary.config({
-  cloud_name: dmuecwv6k,
-  api_key: 258911547745754,
-  api_secret: C4o8xWHsfJ233sJgJ4Rs_SivqhA,
+  cloud_name: 'dmuecwv6k',
+  api_key: '258911547745754',
+  api_secret: 'C4o8xWHsfJ233sJgJ4Rs_SivqhA',
 });
 
 // Configure multer for memory storage (to upload directly to Cloudinary)
