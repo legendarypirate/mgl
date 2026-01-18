@@ -81,6 +81,11 @@ module.exports = (sequelize, Sequelize) => {
         allowNull: true,
         defaultValue: null,
       },
+      delivery_image: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        defaultValue: null,
+      },
     });
   
     return Delivery;

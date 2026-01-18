@@ -6,7 +6,31 @@ const Op = db.Sequelize.Op;
 const { fn, col, literal } = db.Sequelize;
 const DeliveryItem = db.delivery_items;
 const Good = db.goods;
-const moment = require("moment-timezone"); // <-- Add this line
+const moment = require("moment-timezone");
+const cloudinary = require('cloudinary').v2;
+const multer = require('multer');
+const path = require('path');
+
+// Configure Cloudinary (you'll need to set these in environment variables)
+cloudinary.config({
+  cloud_name: dmuecwv6k,
+  api_key: 258911547745754,
+  api_secret: C4o8xWHsfJ233sJgJ4Rs_SivqhA,
+});
+
+// Configure multer for memory storage (to upload directly to Cloudinary)
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  fileFilter: function (req, file, cb) {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+}).single('delivery_image');
 
 exports.findDriverDeliveriesWithStatus = (req, res) => {
   const driverId = req.params.id;
@@ -283,133 +307,178 @@ exports.report = async (req, res) => {
 };
 
 exports.completeDelivery = async (req, res) => {
-  const id = req.params.id;
-  const { status, driver_comment } = req.body;
-
-  if (!status) {
-    return res.status(400).send({
-      success: false,
-      message: "Status is required.",
-    });
-  }
-
-  const t = await db.sequelize.transaction();
-
-  try {
-    // 🔹 Find delivery
-    const delivery = await Delivery.findByPk(id, { transaction: t });
-    if (!delivery) {
-      await t.rollback();
-      return res.status(404).send({
+  // Handle file upload first
+  upload(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).send({
         success: false,
-        message: "Delivery not found.",
+        message: `File upload error: ${err.message}`,
+      });
+    } else if (err) {
+      return res.status(400).send({
+        success: false,
+        message: err.message || "File upload error.",
       });
     }
 
-    // 🔹 Prepare update fields
-    const updateData = {
-      status: parseInt(status, 10),
-      delivered_at: new Date(), // ✅ Always set delivered_at to current time
-    };
+    const id = req.params.id;
+    const { status, driver_comment } = req.body;
 
-    // ✅ Add driver comment if provided
-    if (driver_comment !== undefined) {
-      updateData.driver_comment = driver_comment;
+    if (!status) {
+      return res.status(400).send({
+        success: false,
+        message: "Status is required.",
+      });
     }
 
-    // 🔹 Update delivery
-    await delivery.update(updateData, { transaction: t });
+    const t = await db.sequelize.transaction();
 
-    const statusInt = parseInt(status, 10);
-    const items = await DeliveryItem.findAll({
-      where: { delivery_id: id },
-      transaction: t,
-    });
-
-    // ✅ If declined (status 5), move from in_delivery back to stock
-    if (statusInt === 4) {
-      for (const item of items) {
-        if (!item.good_id) continue;
-        const good = await Good.findByPk(item.good_id, { transaction: t });
-        if (!good) continue;
-
-        // Move from in_delivery back to stock
-        await good.update(
-          {
-            stock: (good.stock || 0) + item.quantity,
-            in_delivery: Math.max(0, (good.in_delivery || 0) - item.quantity),
-          },
-          { transaction: t }
-        );
-
-        // Create history record
-        await db.good_histories.create(
-          {
-            good_id: item.good_id,
-            type: 4, // Delivery cancelled (back to stock)
-            amount: item.quantity,
-            delivery_id: delivery.id,
-            comment: `Жолооч цуцалсан (Delivery ID: ${delivery.delivery_id})`,
-          },
-          { transaction: t }
-        );
+    try {
+      // 🔹 Find delivery
+      const delivery = await Delivery.findByPk(id, { transaction: t });
+      if (!delivery) {
+        await t.rollback();
+        return res.status(404).send({
+          success: false,
+          message: "Delivery not found.",
+        });
       }
-    }
-    // ✅ If delivered (status 3), move from in_delivery to delivered
-    else if (statusInt === 3) {
-      for (const item of items) {
-        if (!item.good_id) continue;
-        const good = await Good.findByPk(item.good_id, { transaction: t });
-        if (!good) continue;
 
-        // Move from in_delivery to delivered
-        await good.update(
-          {
-            in_delivery: Math.max(0, (good.in_delivery || 0) - item.quantity),
-            delivered: (good.delivered || 0) + item.quantity,
-          },
-          { transaction: t }
-        );
-
-        // Create history record
-        await db.good_histories.create(
-          {
-            good_id: item.good_id,
-            type: 5, // Delivery completed (delivered)
-            amount: item.quantity,
-            delivery_id: delivery.id,
-            comment: `Хүргэлт амжилттай (Delivery ID: ${delivery.delivery_id})`,
-          },
-          { transaction: t }
-        );
-      }
-    }
-
-    // 🔹 Insert into histories
-    await db.histories.create(
-      {
-        merchant_id: delivery.merchant_id,
-        delivery_id: delivery.id,
-        driver_id: delivery.driver_id,
+      // 🔹 Prepare update fields
+      const updateData = {
         status: parseInt(status, 10),
-      },
-      { transaction: t }
-    );
+        delivered_at: new Date(), // ✅ Always set delivered_at to current time
+      };
 
-    await t.commit();
+      // ✅ Add driver comment if provided
+      if (driver_comment !== undefined) {
+        updateData.driver_comment = driver_comment;
+      }
 
-    res.send({
-      success: true,
-      data: { message: `Delivery status updated to ${status} and history recorded.` },
-    });
-  } catch (err) {
-    await t.rollback();
-    console.error("❌ Error in completeDelivery:", err);
-    res.status(500).send({
-      success: false,
-      message: err.message || "Server error while updating delivery.",
-    });
-  }
+      // ✅ If status is 3 (delivered) and image is provided, upload to Cloudinary
+      const statusInt = parseInt(status, 10);
+      if (statusInt === 3 && req.file) {
+        try {
+          // Upload to Cloudinary
+          const uploadResult = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              {
+                folder: 'deliveries',
+                resource_type: 'image',
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            );
+            uploadStream.end(req.file.buffer);
+          });
+
+          // Save Cloudinary URL to database
+          updateData.delivery_image = uploadResult.secure_url;
+        } catch (cloudinaryError) {
+          console.error("❌ Cloudinary upload error:", cloudinaryError);
+          await t.rollback();
+          return res.status(500).send({
+            success: false,
+            message: "Failed to upload image to Cloudinary.",
+          });
+        }
+      }
+
+      // 🔹 Update delivery
+      await delivery.update(updateData, { transaction: t });
+
+      const items = await DeliveryItem.findAll({
+        where: { delivery_id: id },
+        transaction: t,
+      });
+
+      // ✅ If declined (status 5), move from in_delivery back to stock
+      if (statusInt === 4) {
+        for (const item of items) {
+          if (!item.good_id) continue;
+          const good = await Good.findByPk(item.good_id, { transaction: t });
+          if (!good) continue;
+
+          // Move from in_delivery back to stock
+          await good.update(
+            {
+              stock: (good.stock || 0) + item.quantity,
+              in_delivery: Math.max(0, (good.in_delivery || 0) - item.quantity),
+            },
+            { transaction: t }
+          );
+
+          // Create history record
+          await db.good_histories.create(
+            {
+              good_id: item.good_id,
+              type: 4, // Delivery cancelled (back to stock)
+              amount: item.quantity,
+              delivery_id: delivery.id,
+              comment: `Жолооч цуцалсан (Delivery ID: ${delivery.delivery_id})`,
+            },
+            { transaction: t }
+          );
+        }
+      }
+      // ✅ If delivered (status 3), move from in_delivery to delivered
+      else if (statusInt === 3) {
+        for (const item of items) {
+          if (!item.good_id) continue;
+          const good = await Good.findByPk(item.good_id, { transaction: t });
+          if (!good) continue;
+
+          // Move from in_delivery to delivered
+          await good.update(
+            {
+              in_delivery: Math.max(0, (good.in_delivery || 0) - item.quantity),
+              delivered: (good.delivered || 0) + item.quantity,
+            },
+            { transaction: t }
+          );
+
+          // Create history record
+          await db.good_histories.create(
+            {
+              good_id: item.good_id,
+              type: 5, // Delivery completed (delivered)
+              amount: item.quantity,
+              delivery_id: delivery.id,
+              comment: `Хүргэлт амжилттай (Delivery ID: ${delivery.delivery_id})`,
+            },
+            { transaction: t }
+          );
+        }
+      }
+
+      // 🔹 Insert into histories
+      await db.histories.create(
+        {
+          merchant_id: delivery.merchant_id,
+          delivery_id: delivery.id,
+          driver_id: delivery.driver_id,
+          status: parseInt(status, 10),
+        },
+        { transaction: t }
+      );
+
+      await t.commit();
+
+      res.send({
+        success: true,
+        data: { message: `Delivery status updated to ${status} and history recorded.` },
+      });
+    } catch (err) {
+      await t.rollback();
+      console.error("❌ Error in completeDelivery:", err);
+      res.status(500).send({
+        success: false,
+        message: err.message || "Server error while updating delivery.",
+      });
+    }
+  });
 };
 
 
