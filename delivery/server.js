@@ -13,10 +13,11 @@ var corsOptions = {
 app.use(cors(corsOptions));
 
 // parse requests of content-type - application/json
-app.use(express.json());
+// Increase limit to 50MB to handle large payloads (e.g., base64 images, large delivery data)
+app.use(express.json({ limit: '50mb' }));
 
 // parse requests of content-type - application/x-www-form-urlencoded
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Serve static files (images) from the 'app/assets' folder
 app.use("/assets", express.static(path.join(__dirname, "app", "assets")));

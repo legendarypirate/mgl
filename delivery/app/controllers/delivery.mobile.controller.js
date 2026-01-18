@@ -359,12 +359,21 @@ exports.completeDelivery = async (req, res) => {
       const statusInt = parseInt(status, 10);
       if (statusInt === 3 && req.file) {
         try {
-          // Upload to Cloudinary
+          // Upload to Cloudinary with resizing and compression
           const uploadResult = await new Promise((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
               {
                 folder: 'deliveries',
                 resource_type: 'image',
+                transformation: [
+                  {
+                    width: 1920,
+                    height: 1920,
+                    crop: 'limit', // Maintain aspect ratio, don't crop
+                    quality: 'auto:good', // Automatic quality optimization
+                    fetch_format: 'auto', // Auto-select best format (WebP, AVIF, etc.)
+                  }
+                ],
               },
               (error, result) => {
                 if (error) reject(error);
