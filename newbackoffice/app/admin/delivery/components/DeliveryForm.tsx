@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { ProductItem, User, District } from '../types/delivery';
@@ -312,42 +313,40 @@ export default function DeliveryForm({
 
         {pullFromWarehouse && (
           <div className="space-y-4 border-t pt-4">
-            <div className="grid grid-cols-12 gap-2">
-              <div className="col-span-5">
-                <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Бараа сонгох" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {products.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="space-y-2">
+              <div className="grid grid-cols-12 gap-2">
+                <div className="col-span-12">
+                  <SearchableSelect
+                    options={products.map((p) => ({
+                      value: p.id,
+                      label: p.name,
+                    }))}
+                    value={selectedProduct}
+                    onValueChange={setSelectedProduct}
+                    placeholder="Бараа сонгох"
+                  />
+                </div>
               </div>
-              <div className="col-span-3">
+              <div className="space-y-2">
                 <Input
                   type="number"
                   min={1}
                   value={quantity}
                   onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
                   placeholder="Тоо"
+                  className="w-full"
                 />
-              </div>
-              <div className="col-span-3">
                 <Input
                   type="number"
                   min={0}
                   value={productPrice}
                   onChange={(e) => setProductPrice(parseFloat(e.target.value) || 0)}
                   placeholder="Үнэ"
+                  className="w-full"
                 />
-              </div>
-              <div className="col-span-1">
-                <Button type="button" onClick={handleAddProduct} size="icon">
-                  <Plus className="h-4 w-4" />
+                <Button type="button" onClick={handleAddProduct} className="w-full">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Нэмэх
                 </Button>
               </div>
             </div>

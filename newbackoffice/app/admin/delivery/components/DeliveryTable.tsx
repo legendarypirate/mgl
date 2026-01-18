@@ -84,6 +84,7 @@ export default function DeliveryTable({
               <TableHead>Ж/тайлбар</TableHead>
               {!isMerchant && <TableHead>Жолооч нэр</TableHead>}
               {!isMerchant && <TableHead>Үйлдэл</TableHead>}
+              {isMerchant && <TableHead>Зураг</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -103,6 +104,7 @@ export default function DeliveryTable({
                 <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                 {!isMerchant && <TableCell><Skeleton className="h-4 w-20" /></TableCell>}
                 {!isMerchant && <TableCell><Skeleton className="h-4 w-16" /></TableCell>}
+                {isMerchant && <TableCell><Skeleton className="h-4 w-16" /></TableCell>}
               </TableRow>
             ))}
           </TableBody>
@@ -139,12 +141,13 @@ export default function DeliveryTable({
             <TableHead>Ж/тайлбар</TableHead>
             {!isMerchant && <TableHead>Жолооч нэр</TableHead>}
             {!isMerchant && <TableHead>Үйлдэл</TableHead>}
+            {isMerchant && <TableHead>Зураг</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {deliveries.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={isMerchant ? 10 : 12} className="text-center text-gray-400 py-8">
+              <TableCell colSpan={isMerchant ? 11 : 12} className="text-center text-gray-400 py-8">
                 Хүргэлт олдсонгүй
               </TableCell>
             </TableRow>
@@ -284,6 +287,22 @@ export default function DeliveryTable({
                                 </div>
                               </TableCell>
                             )}
+                            {isMerchant && (
+                              <TableCell rowSpan={items.length}>
+                                {delivery.delivery_image && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedImage(delivery.delivery_image || null);
+                                    }}
+                                  >
+                                    <ImageIcon className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </TableCell>
+                            )}
                           </>
                         )}
                       </TableRow>
@@ -394,11 +413,27 @@ export default function DeliveryTable({
                           </div>
                         </TableCell>
                       )}
+                      {isMerchant && (
+                        <TableCell>
+                          {delivery.delivery_image && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedImage(delivery.delivery_image || null);
+                              }}
+                            >
+                              <ImageIcon className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
                     </TableRow>
                   )}
                 {isRowExpanded(delivery.id) && (
                   <TableRow>
-                    <TableCell colSpan={isMerchant ? 10 : 12}>
+                    <TableCell colSpan={isMerchant ? 11 : 12}>
                       {loadingRows.includes(delivery.id) ? (
                         <div className="p-4 text-center">Loading items...</div>
                       ) : (
