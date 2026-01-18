@@ -210,8 +210,13 @@ export default function DeliveryTable({
                             <TableCell rowSpan={items.length}>
                               <div className="font-medium">{delivery.phone}</div>
                             </TableCell>
-                            <TableCell rowSpan={items.length}>
-                              <div className="text-base text-gray-700">{delivery.address}</div>
+                            <TableCell rowSpan={items.length} className="max-w-xs">
+                              <div 
+                                className="text-base text-gray-700 truncate"
+                                title={delivery.address || ''}
+                              >
+                                {delivery.address}
+                              </div>
                             </TableCell>
                             <TableCell rowSpan={items.length}>
                               <Badge
@@ -325,8 +330,13 @@ export default function DeliveryTable({
                       <TableCell>
                         <div className="font-medium">{delivery.phone}</div>
                       </TableCell>
-                      <TableCell>
-                        <div className="text-base text-gray-700">{delivery.address}</div>
+                      <TableCell className="max-w-xs">
+                        <div 
+                          className="text-base text-gray-700 truncate"
+                          title={delivery.address || ''}
+                        >
+                          {delivery.address}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge
