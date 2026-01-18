@@ -670,6 +670,7 @@ function DeliveryPageContent() {
         onExcelImport={handleExcelImport}
         hasPermission={hasPermission}
         fileInputRef={fileInputRef}
+        isMerchant={isMerchant}
       />
 
       <input

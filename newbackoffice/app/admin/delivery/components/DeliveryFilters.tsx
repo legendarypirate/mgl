@@ -41,6 +41,7 @@ interface DeliveryFiltersProps {
   onExcelImport: () => void;
   hasPermission: (perm: string) => boolean;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
+  isMerchant?: boolean;
 }
 
 export default function DeliveryFilters({
@@ -64,6 +65,7 @@ export default function DeliveryFilters({
   onExcelImport,
   hasPermission,
   fileInputRef,
+  isMerchant = false,
 }: DeliveryFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-4 mb-6">
@@ -74,22 +76,24 @@ export default function DeliveryFilters({
         className="w-48"
       />
 
-      <Select
-        value={selectedDriverId?.toString() || 'all'}
-        onValueChange={(value) => onDriverFilterChange(value === 'all' ? null : parseInt(value))}
-      >
-        <SelectTrigger className="w-48">
-          <SelectValue placeholder="Жолоочноор шүүх" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Жолооч</SelectItem>
-          {drivers.map((driver) => (
-            <SelectItem key={driver.id} value={driver.id.toString()}>
-              {driver.username}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {!isMerchant && (
+        <Select
+          value={selectedDriverId?.toString() || 'all'}
+          onValueChange={(value) => onDriverFilterChange(value === 'all' ? null : parseInt(value))}
+        >
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Жолоочноор шүүх" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Жолооч</SelectItem>
+            {drivers.map((driver) => (
+              <SelectItem key={driver.id} value={driver.id.toString()}>
+                {driver.username}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       <Select
         value={selectedDistrictId?.toString() || 'all'}
@@ -108,22 +112,24 @@ export default function DeliveryFilters({
         </SelectContent>
       </Select>
 
-      <Select
-        value={selectedMerchantId?.toString() || 'all'}
-        onValueChange={(value) => onMerchantFilterChange(value === 'all' ? null : parseInt(value))}
-      >
-        <SelectTrigger className="w-48">
-          <SelectValue placeholder="Мерчандаар шүүх" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Дэлгүүр</SelectItem>
-          {merchants.map((merchant) => (
-            <SelectItem key={merchant.id} value={merchant.id.toString()}>
-              {merchant.username}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {!isMerchant && (
+        <Select
+          value={selectedMerchantId?.toString() || 'all'}
+          onValueChange={(value) => onMerchantFilterChange(value === 'all' ? null : parseInt(value))}
+        >
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Мерчандаар шүүх" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Дэлгүүр</SelectItem>
+            {merchants.map((merchant) => (
+              <SelectItem key={merchant.id} value={merchant.id.toString()}>
+                {merchant.username}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       <div className="flex items-center gap-2">
         <Input
