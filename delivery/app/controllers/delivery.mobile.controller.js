@@ -22,7 +22,7 @@ cloudinary.config({
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max - matches Express body parser limit
   fileFilter: function (req, file, cb) {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
