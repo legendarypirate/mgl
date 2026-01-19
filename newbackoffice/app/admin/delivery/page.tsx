@@ -754,7 +754,7 @@ function DeliveryPageContent() {
                 <span className="ml-4 font-semibold">
                   Нийт: {deliveries
                     .filter((d) => selectedRowKeys.includes(d.id))
-                    .reduce((sum, d) => sum + (d.price || 0), 0)
+                    .reduce((sum, d) => sum + (Number(d.price) || 0), 0)
                     .toLocaleString()}₮
                 </span>
               )}
