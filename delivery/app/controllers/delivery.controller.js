@@ -625,10 +625,13 @@ exports.findAll = async (req, res) => {
     }
 
     // 🔍 Query database
+    // Use distinct: true to avoid counting duplicates from JOINs
     const { count, rows } = await Delivery.findAndCountAll({
       where,
       limit,
       offset,
+      distinct: true,
+      col: 'Delivery.id',
       include: [
         { model: User, as: "merchant", attributes: ["username"] },
         { model: Status, as: "status_name", attributes: ["status", "color"] },
