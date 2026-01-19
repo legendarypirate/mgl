@@ -750,6 +750,14 @@ function DeliveryPageContent() {
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div className="text-sm text-gray-600">
               {selectedRowKeys.length} ширхэг сонгогдсон
+              {selectedRowKeys.length > 0 && (
+                <span className="ml-4 font-semibold">
+                  Нийт: {deliveries
+                    .filter((d) => selectedRowKeys.includes(d.id))
+                    .reduce((sum, d) => sum + (d.price || 0), 0)
+                    .toLocaleString()}₮
+                </span>
+              )}
             </div>
             <div className="flex gap-2">
               <Button
