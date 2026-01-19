@@ -631,7 +631,6 @@ exports.findAll = async (req, res) => {
       limit,
       offset,
       distinct: true,
-      col: 'Delivery.id',
       include: [
         { model: User, as: "merchant", attributes: ["username"] },
         { model: Status, as: "status_name", attributes: ["status", "color"] },
