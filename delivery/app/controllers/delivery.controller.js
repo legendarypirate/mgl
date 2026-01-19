@@ -341,6 +341,153 @@ exports.getItemsByDeliveryId = async (req, res) => {
   }
 };
 
+// Update delivery item
+exports.updateDeliveryItem = async (req, res) => {
+  const { deliveryId, itemId } = req.params;
+  const { quantity } = req.body;
+
+  if (!deliveryId || !itemId) {
+    return res.status(400).json({ success: false, message: "Delivery ID and Item ID are required" });
+  }
+
+  if (quantity === undefined || quantity < 0) {
+    return res.status(400).json({ success: false, message: "Valid quantity is required" });
+  }
+
+  const t = await db.sequelize.transaction();
+
+  try {
+    // Get the current item
+    const item = await DeliveryItem.findOne({
+      where: { id: itemId, delivery_id: deliveryId },
+      transaction: t,
+    });
+
+    if (!item) {
+      await t.rollback();
+      return res.status(404).json({ success: false, message: "Delivery item not found" });
+    }
+
+    const oldQuantity = item.quantity;
+    const quantityDiff = quantity - oldQuantity;
+
+    // Update the item quantity
+    await item.update({ quantity }, { transaction: t });
+
+    // Update stock if the good exists
+    if (item.good_id) {
+      const good = await Good.findByPk(item.good_id, { transaction: t });
+      if (good) {
+        if (quantityDiff > 0) {
+          // Quantity increased - move from stock to in_delivery
+          await good.update(
+            {
+              stock: Math.max(0, good.stock - quantityDiff),
+              in_delivery: (good.in_delivery || 0) + quantityDiff,
+            },
+            { transaction: t }
+          );
+        } else if (quantityDiff < 0) {
+          // Quantity decreased - move from in_delivery back to stock
+          await good.update(
+            {
+              stock: (good.stock || 0) + Math.abs(quantityDiff),
+              in_delivery: Math.max(0, (good.in_delivery || 0) - Math.abs(quantityDiff)),
+            },
+            { transaction: t }
+          );
+        }
+
+        // Create history record
+        await db.good_histories.create(
+          {
+            good_id: item.good_id,
+            type: quantityDiff > 0 ? 3 : 4, // 3 = added to delivery, 4 = removed from delivery
+            amount: Math.abs(quantityDiff),
+            delivery_id: deliveryId,
+            comment: `Барааны тоо хэмжээ өөрчлөгдсөн (${oldQuantity} → ${quantity})`,
+          },
+          { transaction: t }
+        );
+      }
+    }
+
+    await t.commit();
+    res.json({ success: true, data: item });
+  } catch (err) {
+    await t.rollback();
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: err.message || "Error updating delivery item",
+    });
+  }
+};
+
+// Delete delivery item
+exports.deleteDeliveryItem = async (req, res) => {
+  const { deliveryId, itemId } = req.params;
+
+  if (!deliveryId || !itemId) {
+    return res.status(400).json({ success: false, message: "Delivery ID and Item ID are required" });
+  }
+
+  const t = await db.sequelize.transaction();
+
+  try {
+    // Get the item to delete
+    const item = await DeliveryItem.findOne({
+      where: { id: itemId, delivery_id: deliveryId },
+      transaction: t,
+    });
+
+    if (!item) {
+      await t.rollback();
+      return res.status(404).json({ success: false, message: "Delivery item not found" });
+    }
+
+    // Restore stock if the good exists
+    if (item.good_id) {
+      const good = await Good.findByPk(item.good_id, { transaction: t });
+      if (good) {
+        // Move from in_delivery back to stock
+        await good.update(
+          {
+            stock: (good.stock || 0) + item.quantity,
+            in_delivery: Math.max(0, (good.in_delivery || 0) - item.quantity),
+          },
+          { transaction: t }
+        );
+
+        // Create history record
+        await db.good_histories.create(
+          {
+            good_id: item.good_id,
+            type: 4, // Delivery item deleted (back to stock)
+            amount: item.quantity,
+            delivery_id: deliveryId,
+            comment: `Бараа хүргэлтээс устгагдсан`,
+          },
+          { transaction: t }
+        );
+      }
+    }
+
+    // Delete the item
+    await item.destroy({ transaction: t });
+
+    await t.commit();
+    res.json({ success: true, message: "Delivery item deleted successfully" });
+  } catch (err) {
+    await t.rollback();
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: err.message || "Error deleting delivery item",
+    });
+  }
+};
+
 exports.importExcelDeliveries = async (req, res) => {
     const { deliveries } = req.body;
   

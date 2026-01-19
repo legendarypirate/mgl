@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -19,8 +21,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Delivery, DeliveryHistory, DeliveryStatus, User, Region } from '../types/delivery';
+import { Delivery, DeliveryHistory, DeliveryStatus, User, Region, DeliveryItem } from '../types/delivery';
 import { format } from 'date-fns';
+import { fetchDeliveryItems, updateDeliveryItem, deleteDeliveryItem } from '../services/delivery.service';
 
 interface DriverAllocationModalProps {
   isOpen: boolean;
@@ -211,9 +214,82 @@ export function EditModal({
   formData,
   onFormDataChange,
 }: EditModalProps) {
+  const [items, setItems] = useState<DeliveryItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [editingQuantities, setEditingQuantities] = useState<Record<number, number>>({});
+
+  // Fetch items when modal opens
+  useEffect(() => {
+    if (isOpen && delivery) {
+      loadItems();
+    } else {
+      setItems([]);
+      setEditingQuantities({});
+    }
+  }, [isOpen, delivery]);
+
+  const loadItems = async () => {
+    if (!delivery) return;
+    setLoadingItems(true);
+    try {
+      const fetchedItems = await fetchDeliveryItems(delivery.id);
+      setItems(fetchedItems);
+      // Initialize editing quantities
+      const initialQuantities: Record<number, number> = {};
+      fetchedItems.forEach((item) => {
+        initialQuantities[item.id] = item.quantity;
+      });
+      setEditingQuantities(initialQuantities);
+    } catch (error) {
+      console.error('Error loading items:', error);
+      toast.error('Бараа ачааллахад алдаа гарлаа');
+    } finally {
+      setLoadingItems(false);
+    }
+  };
+
+  const handleQuantityChange = (itemId: number, quantity: number) => {
+    setEditingQuantities((prev) => ({
+      ...prev,
+      [itemId]: quantity,
+    }));
+  };
+
+  const handleUpdateItem = async (itemId: number) => {
+    if (!delivery) return;
+    const newQuantity = editingQuantities[itemId];
+    if (newQuantity === undefined || newQuantity < 0) {
+      toast.error('Тоо хэмжээ буруу байна');
+      return;
+    }
+
+    try {
+      await updateDeliveryItem(delivery.id, itemId, newQuantity);
+      toast.success('Амжилттай шинэчлэгдлээ');
+      await loadItems();
+    } catch (error: any) {
+      toast.error(error.message || 'Шинэчлэхэд алдаа гарлаа');
+    }
+  };
+
+  const handleDeleteItem = async (itemId: number) => {
+    if (!delivery) return;
+    if (!confirm('Та энэ барааг устгахдаа итгэлтэй байна уу?')) {
+      return;
+    }
+
+    try {
+      await deleteDeliveryItem(delivery.id, itemId);
+      toast.success('Амжилттай устгагдлаа');
+      await loadItems();
+    } catch (error: any) {
+      toast.error(error.message || 'Устгахад алдаа гарлаа');
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Утас & Хаяг засах</DialogTitle>
         </DialogHeader>
@@ -265,6 +341,72 @@ export function EditModal({
               }
               required
             />
+          </div>
+
+          {/* Items Section */}
+          <div className="space-y-2 border-t pt-4">
+            <Label>Бараа</Label>
+            {loadingItems ? (
+              <p className="text-sm text-gray-500">Ачааллаж байна...</p>
+            ) : items.length === 0 ? (
+              <p className="text-sm text-gray-500">Бараа байхгүй</p>
+            ) : (
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Бараа</TableHead>
+                      <TableHead>Тоо хэмжээ</TableHead>
+                      <TableHead>Үйлдэл</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {items.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">
+                          {item.good?.name || 'Unknown'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              min="0"
+                              value={editingQuantities[item.id] ?? item.quantity}
+                              onChange={(e) =>
+                                handleQuantityChange(
+                                  item.id,
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              className="w-20"
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdateItem(item.id)}
+                              disabled={
+                                editingQuantities[item.id] === item.quantity
+                              }
+                            >
+                              Хадгалах
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteItem(item.id)}
+                          >
+                            Устгах
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </div>
         </div>
         <DialogFooter>

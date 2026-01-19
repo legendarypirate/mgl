@@ -100,15 +100,19 @@ export default function ReportPage() {
 
       const deliveries = await fetchReportDeliveries(filters);
 
+      // Filter to only include deliveries with status 3 (already filtered in API, but double-check)
+      const filteredDeliveries = deliveries.filter(
+        (d) => d.status === 3 || d.status === '3'
+      );
+
       // Group deliveries by driver or merchant
-      const groupedData = groupDeliveriesByType(deliveries, reportType);
+      const groupedData = groupDeliveriesByType(filteredDeliveries, reportType);
 
       // Calculate statistics for each group
       const reportRows: ReportRow[] = Object.entries(groupedData).map(
         ([id, groupDeliveries]) => {
-          const deliveredCount = groupDeliveries.filter(
-            (d) => d.status === 3 || d.status === '3'
-          ).length;
+          // All deliveries are already status 3, so deliveredCount equals totalCount
+          const deliveredCount = groupDeliveries.length;
           const totalCount = groupDeliveries.length;
           const totalPrice = groupDeliveries.reduce(
             (sum, d) => sum + parseFloat(d.price.toString()),

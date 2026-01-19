@@ -270,3 +270,38 @@ export const importDeliveries = async (deliveries: any[]): Promise<{ inserted?: 
   throw new Error(result.message || 'Import failed');
 };
 
+// Update delivery item
+export const updateDeliveryItem = async (
+  deliveryId: number,
+  itemId: number,
+  quantity: number
+): Promise<DeliveryItem> => {
+  const response = await fetch(`${API_URL}/api/delivery/${deliveryId}/items/${itemId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ quantity }),
+  });
+
+  const result = await response.json();
+  if (result.success) {
+    return result.data;
+  }
+  throw new Error(result.message || 'Failed to update delivery item');
+};
+
+// Delete delivery item
+export const deleteDeliveryItem = async (
+  deliveryId: number,
+  itemId: number
+): Promise<void> => {
+  const response = await fetch(`${API_URL}/api/delivery/${deliveryId}/items/${itemId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.message || 'Failed to delete delivery item');
+  }
+};
+

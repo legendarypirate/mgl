@@ -17,6 +17,8 @@ module.exports = app => {
     router.get('/delivery-status-counts', delivery.getStatusCounts);
 
   router.get("/:deliveryId/items", delivery.getItemsByDeliveryId);
+  router.put("/:deliveryId/items/:itemId", delivery.updateDeliveryItem);
+  router.delete("/:deliveryId/items/:itemId", delivery.deleteDeliveryItem);
   router.get("/:id/history", delivery.getDeliveryHistory);
 
 

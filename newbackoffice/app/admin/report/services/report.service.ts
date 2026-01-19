@@ -30,6 +30,8 @@ export const fetchReportDeliveries = async (
   if (filters.merchantId) url += `&merchant_id=${filters.merchantId}`;
   if (filters.startDate) url += `&start_date=${filters.startDate}`;
   if (filters.endDate) url += `&end_date=${filters.endDate}`;
+  // Filter by status 3 (delivered)
+  url += `&status_ids=3`;
 
   try {
     const response = await fetch(url, {
