@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
+import * as XLSX from 'xlsx';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -183,6 +184,92 @@ export default function ReportPage() {
     }).format(amount);
   };
 
+  // Calculate totals
+  const totals = reportData.reduce(
+    (acc, row) => {
+      acc.deliveredDeliveries += row.deliveredDeliveries;
+      acc.totalDeliveries += row.totalDeliveries;
+      acc.totalPrice += row.totalPrice;
+      acc.salary += row.salary;
+      acc.difference += row.totalPrice - row.salary;
+      return acc;
+    },
+    {
+      deliveredDeliveries: 0,
+      totalDeliveries: 0,
+      totalPrice: 0,
+      salary: 0,
+      difference: 0,
+    }
+  );
+
+  const exportToExcel = () => {
+    if (reportData.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    // Prepare data for Excel
+    const excelData = [
+      // Headers
+      [
+        'Огноо',
+        reportType === 'driver' ? 'Жолооч' : 'Дэлгүүр',
+        'Хүргэсэн хүргэлт',
+        'Нийт хүргэлт',
+        'Нийт тооцоо',
+        'Цалин',
+        'зөрүү',
+      ],
+      // Data rows
+      ...reportData.map((row) => [
+        row.dateRange,
+        row.name,
+        row.deliveredDeliveries,
+        row.totalDeliveries,
+        row.totalPrice,
+        row.salary,
+        row.totalPrice - row.salary,
+      ]),
+      // Totals row
+      [
+        'Нийт',
+        '',
+        totals.deliveredDeliveries,
+        totals.totalDeliveries,
+        totals.totalPrice,
+        totals.salary,
+        totals.difference,
+      ],
+    ];
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 20 }, // Огноо
+      { wch: 20 }, // Жолооч/Дэлгүүр
+      { wch: 18 }, // Хүргэсэн хүргэлт
+      { wch: 15 }, // Нийт хүргэлт
+      { wch: 15 }, // Нийт тооцоо
+      { wch: 15 }, // Цалин
+      { wch: 15 }, // зөрүү
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Report');
+
+    // Generate filename with date range
+    const startDate = dayjs(dateRange[0]).format('YYYY-MM-DD');
+    const endDate = dayjs(dateRange[1]).format('YYYY-MM-DD');
+    const filename = `Report_${startDate}_${endDate}_${reportType}.xlsx`;
+
+    // Save file
+    XLSX.writeFile(wb, filename);
+    toast.success('Report exported successfully');
+  };
+
   return (
     <div className="w-full mt-6 px-4 pb-32">
       <div className="mb-6">
@@ -267,6 +354,15 @@ export default function ReportPage() {
         <Button onClick={handleSubmit} disabled={loading}>
           {loading ? 'Loading...' : 'Search'}
         </Button>
+
+        {/* Export Button */}
+        <Button
+          onClick={exportToExcel}
+          disabled={loading || reportData.length === 0}
+          variant="outline"
+        >
+          Export to Excel
+        </Button>
       </div>
 
       {/* Report Table */}
@@ -299,21 +395,39 @@ export default function ReportPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              reportData.map((row, index) => (
-                <TableRow key={index}>
-                  <TableCell>{row.dateRange}</TableCell>
-                  <TableCell className="font-medium">{row.name}</TableCell>
-                  <TableCell>{row.deliveredDeliveries}</TableCell>
-                  <TableCell>{row.totalDeliveries}</TableCell>
-                  <TableCell>{formatCurrency(row.totalPrice)} ₮</TableCell>
-                  <TableCell className="font-semibold">
-                    {formatCurrency(row.salary)} ₮
+              <>
+                {reportData.map((row, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{row.dateRange}</TableCell>
+                    <TableCell className="font-medium">{row.name}</TableCell>
+                    <TableCell>{row.deliveredDeliveries}</TableCell>
+                    <TableCell>{row.totalDeliveries}</TableCell>
+                    <TableCell>{formatCurrency(row.totalPrice)} ₮</TableCell>
+                    <TableCell className="font-semibold">
+                      {formatCurrency(row.salary)} ₮
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      {formatCurrency(row.totalPrice - row.salary)} ₮
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {/* Totals Row */}
+                <TableRow className="bg-gray-50 font-bold">
+                  <TableCell className="font-bold">Нийт</TableCell>
+                  <TableCell className="font-bold"></TableCell>
+                  <TableCell className="font-bold">{totals.deliveredDeliveries}</TableCell>
+                  <TableCell className="font-bold">{totals.totalDeliveries}</TableCell>
+                  <TableCell className="font-bold">
+                    {formatCurrency(totals.totalPrice)} ₮
                   </TableCell>
-                  <TableCell className="font-semibold">
-                    {formatCurrency(row.totalPrice - row.salary)} ₮
+                  <TableCell className="font-bold">
+                    {formatCurrency(totals.salary)} ₮
+                  </TableCell>
+                  <TableCell className="font-bold">
+                    {formatCurrency(totals.difference)} ₮
                   </TableCell>
                 </TableRow>
-              ))
+              </>
             )}
           </TableBody>
         </Table>
