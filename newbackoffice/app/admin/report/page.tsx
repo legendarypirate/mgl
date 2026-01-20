@@ -119,7 +119,12 @@ export default function ReportPage() {
             (sum, d) => sum + parseFloat(d.price.toString()),
             0
           );
-          const salary = deliveredCount * (reportType === 'driver' ? 5000 : 7000);
+          
+          // Calculate salary: for drivers use 5000, for merchants use their report_price (default 7000)
+          const pricePerDelivery = reportType === 'driver' 
+            ? 5000 
+            : (groupDeliveries[0]?.merchant?.report_price || 7000);
+          const salary = deliveredCount * pricePerDelivery;
 
           const name =
             reportType === 'driver'

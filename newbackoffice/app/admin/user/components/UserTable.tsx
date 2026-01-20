@@ -42,6 +42,7 @@ export default function UserTable({
               <TableHead>Contact Info</TableHead>
               <TableHead>Bank</TableHead>
               <TableHead>Account Number</TableHead>
+              <TableHead>Report Price</TableHead>
               <TableHead>Address</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Created At</TableHead>
@@ -119,6 +120,7 @@ export default function UserTable({
             <TableHead>Phone</TableHead>
             <TableHead>Bank</TableHead>
             <TableHead>Account Number</TableHead>
+            <TableHead>Report Price</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Created At</TableHead>
             <TableHead>Updated At</TableHead>
@@ -126,9 +128,9 @@ export default function UserTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.length === 0 ? (
+            {users.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={12} className="text-center text-gray-400 py-8">
+              <TableCell colSpan={13} className="text-center text-gray-400 py-8">
                 Хэрэглэгч олдсонгүй
               </TableCell>
             </TableRow>
@@ -141,7 +143,7 @@ export default function UserTable({
                 <TableCell>{user.phone || '-'}</TableCell>
                 <TableCell>{user.bank || '-'}</TableCell>
                 <TableCell>{user.account_number || '-'}</TableCell>
-               
+                <TableCell>{user.report_price || 7000} ₮</TableCell>
                 <TableCell>
                   <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">
                     {getRoleLabel(user.role_id)}

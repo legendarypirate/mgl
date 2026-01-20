@@ -57,7 +57,8 @@ exports.create = async (req, res) => {
       bank: req.body.bank,
       account_number: req.body.account_number,
       contact_info: req.body.contact_info,
-      address: req.body.address
+      address: req.body.address,
+      report_price: req.body.report_price || 7000
     };
 
     // Save User in the database

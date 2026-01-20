@@ -45,6 +45,7 @@ export interface Delivery {
   delivery_date?: string;
   merchant: {
     username: string;
+    report_price?: number;
   };
   status_name: {
     status: string;

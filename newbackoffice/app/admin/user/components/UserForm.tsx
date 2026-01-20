@@ -39,6 +39,7 @@ export default function UserForm({
     address: '',
     password: '',
     role_id: '', // No default - user must select
+    report_price: '7000',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -56,6 +57,7 @@ export default function UserForm({
           address: user.address || '',
           password: '', // Don't populate password for security
           role_id: '', // No role selection in edit mode
+          report_price: user.report_price?.toString() || '7000',
         });
       } else {
         // Create mode - reset form
@@ -69,6 +71,7 @@ export default function UserForm({
           address: '',
           password: '',
           role_id: '', // No default - user must select
+          report_price: '7000',
         });
       }
     }
@@ -94,6 +97,7 @@ export default function UserForm({
         account_number: formData.account_number || undefined,
         contact_info: formData.contact_info || undefined,
         address: formData.address || undefined,
+        report_price: formData.report_price ? parseInt(formData.report_price) : 7000,
       };
       
       // Only include role_id when creating (not when editing)
@@ -230,6 +234,17 @@ export default function UserForm({
             onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
             placeholder={user ? 'Leave empty to keep current password' : 'Password'}
             required={!user}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="report_price">Report Price</Label>
+          <Input
+            id="report_price"
+            type="number"
+            value={formData.report_price}
+            onChange={(e) => setFormData((prev) => ({ ...prev, report_price: e.target.value }))}
+            placeholder="7000"
           />
         </div>
 

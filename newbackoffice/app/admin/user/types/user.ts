@@ -9,6 +9,7 @@ export interface User {
   bank?: string;
   account_number?: string;
   address?: string;
+  report_price?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,4 +21,5 @@ export interface CreateUserPayload {
   contact_info?: string;
   role_id: number;
   password: string;
+  report_price?: number;
 }

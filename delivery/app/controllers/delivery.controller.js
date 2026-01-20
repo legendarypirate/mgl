@@ -632,7 +632,7 @@ exports.findAll = async (req, res) => {
       offset,
       distinct: true,
       include: [
-        { model: User, as: "merchant", attributes: ["username"] },
+        { model: User, as: "merchant", attributes: ["username", "report_price"] },
         { model: Status, as: "status_name", attributes: ["status", "color"] },
         { model: User, as: "driver", attributes: ["username"] },
         {
@@ -714,7 +714,7 @@ where.status = {
         {
           model: User,
           as: 'merchant',
-          attributes: ['username'],
+          attributes: ['username', 'report_price'],
         },
         {
           model: Status,
@@ -759,7 +759,7 @@ exports.findOne = async (req, res) => {
         {
           model: User,
           as: 'merchant',     // alias in model associations
-          attributes: ['id', 'username','phone'] // select only what you need
+          attributes: ['id', 'username','phone', 'report_price'] // select only what you need
         },
         {
           model: Status,

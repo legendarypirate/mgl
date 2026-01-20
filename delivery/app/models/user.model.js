@@ -31,6 +31,11 @@ module.exports = (sequelize, Sequelize) => {
       address: {
         type: Sequelize.TEXT,
         allowNull: true
+      },
+      report_price: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        defaultValue: 7000
       }
     });
     return User;
