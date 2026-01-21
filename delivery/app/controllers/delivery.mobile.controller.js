@@ -170,6 +170,20 @@ exports.findMerchantDelivery = (req, res) => {
         [Op.between]: [sevenDaysAgo, localNow],
       },
     },
+    include: [
+      {
+        model: DeliveryItem,
+        as: 'items',
+        include: [
+          {
+            model: Good,
+            as: 'good',
+            attributes: ['id', 'name'],
+          }
+        ],
+        attributes: ['id', 'quantity', 'good_id'],
+      }
+    ],
     order: [["id", "DESC"]],
   })
     .then((data) => res.send({ success: true, data }))
