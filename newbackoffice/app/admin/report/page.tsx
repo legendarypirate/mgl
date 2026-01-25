@@ -184,7 +184,7 @@ export default function ReportPage() {
           const name =
             typeToUse === 'driver'
               ? groupDeliveries[0]?.driver?.username || 'Unknown'
-              : groupDeliveries[0]?.merchant?.username || (isCustomer && user?.username ? user.username : 'Unknown');
+              : (isCustomer && user?.username ? user.username : groupDeliveries[0]?.merchant?.username || 'Unknown');
 
           return {
             dateRange: `${startDate} ~ ${endDate}`,
@@ -218,13 +218,16 @@ export default function ReportPage() {
       // Group by username since that's what we have in the Delivery type
       // The API response may include IDs, but we'll use username as the key
       let key: string;
-      if (type === 'driver') {
+      if (isCustomer) {
+        // For merchants (customers), group ALL deliveries into a single group
+        // Use a static key to ensure all deliveries are aggregated together
+        key = 'merchant_summary';
+      } else if (type === 'driver') {
         // Group by driver username, or 'No Driver' if null
         key = delivery.driver?.username || 'No Driver';
       } else {
         // Group by merchant username (for both 'now' and 'later')
-        // For customers, use their username if merchant username is missing
-        key = delivery.merchant?.username || (isCustomer && user?.username ? user.username : 'Unknown Merchant');
+        key = delivery.merchant?.username || 'Unknown Merchant';
       }
 
       if (!grouped[key]) {
