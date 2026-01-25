@@ -32,6 +32,10 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<ReportRow[]>([]);
 
+  // User info
+  const [user, setUser] = useState<any>(null);
+  const isCustomer = user?.role === 2 || user?.role_id === 2;
+
   // Filters
   const [dateRange, setDateRange] = useState<[Date, Date]>([
     new Date(),
@@ -44,8 +48,18 @@ export default function ReportPage() {
   const [drivers, setDrivers] = useState<User[]>([]);
   const [merchants, setMerchants] = useState<User[]>([]);
 
-  // Load drivers and merchants on mount
+  // Load user from localStorage
   useEffect(() => {
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  // Load drivers and merchants on mount (only if not customer)
+  useEffect(() => {
+    if (isCustomer) return;
+    
     const loadUsers = async () => {
       try {
         const [driversData, merchantsData] = await Promise.all([
@@ -59,7 +73,7 @@ export default function ReportPage() {
       }
     };
     loadUsers();
-  }, []);
+  }, [isCustomer]);
 
   // Auto-load today's statistics on initial load
   useEffect(() => {
@@ -92,11 +106,16 @@ export default function ReportPage() {
         endDate,
       };
 
-      // If a specific driver/merchant is selected, filter by it
-      if (reportType === 'driver' && selectedId) {
-        filters.driverId = selectedId;
-      } else if (reportType === 'merchant' && selectedId) {
-        filters.merchantId = selectedId;
+      // If customer (role 2), automatically filter by their merchant ID
+      if (isCustomer && user?.id) {
+        filters.merchantId = user.id;
+      } else {
+        // If a specific driver/merchant is selected, filter by it
+        if (reportType === 'driver' && selectedId) {
+          filters.driverId = selectedId;
+        } else if ((reportType === 'now' || reportType === 'later') && selectedId) {
+          filters.merchantId = selectedId;
+        }
       }
 
       const deliveries = await fetchReportDeliveries(filters);
@@ -106,8 +125,43 @@ export default function ReportPage() {
         (d) => d.status === 3 || d.status === '3'
       );
 
+      // Filter merchants by зөрүү (difference) based on report type
+      // Skip this filtering for customers (role 2) - show all their deliveries
+      let deliveriesToProcess = filteredDeliveries;
+      if (!isCustomer && (reportType === 'now' || reportType === 'later')) {
+        // Group by merchant first to calculate difference
+        const merchantGroups: Record<string, Delivery[]> = {};
+        filteredDeliveries.forEach((delivery) => {
+          const key = delivery.merchant?.username || 'Unknown Merchant';
+          if (!merchantGroups[key]) {
+            merchantGroups[key] = [];
+          }
+          merchantGroups[key].push(delivery);
+        });
+
+        // Filter merchants based on зөрүү
+        deliveriesToProcess = [];
+        Object.entries(merchantGroups).forEach(([merchantName, merchantDeliveries]) => {
+          const totalPrice = merchantDeliveries.reduce(
+            (sum, d) => sum + parseFloat(d.price.toString()),
+            0
+          );
+          const pricePerDelivery = merchantDeliveries[0]?.merchant?.report_price || 7000;
+          const salary = merchantDeliveries.length * pricePerDelivery;
+          const difference = totalPrice - salary;
+
+          // Now: difference >= 0, Later: difference < 0
+          if ((reportType === 'now' && difference >= 0) || 
+              (reportType === 'later' && difference < 0)) {
+            deliveriesToProcess.push(...merchantDeliveries);
+          }
+        });
+      }
+
       // Group deliveries by driver or merchant
-      const groupedData = groupDeliveriesByType(filteredDeliveries, reportType);
+      // For customers, always group by merchant (their own data)
+      const typeToUse = isCustomer ? 'now' : reportType;
+      const groupedData = groupDeliveriesByType(deliveriesToProcess, typeToUse, isCustomer, user);
 
       // Calculate statistics for each group
       const reportRows: ReportRow[] = Object.entries(groupedData).map(
@@ -121,15 +175,16 @@ export default function ReportPage() {
           );
           
           // Calculate salary: for drivers use 5000, for merchants use their report_price (default 7000)
-          const pricePerDelivery = reportType === 'driver' 
+          const typeToUse = isCustomer ? 'now' : reportType;
+          const pricePerDelivery = typeToUse === 'driver' 
             ? 5000 
             : (groupDeliveries[0]?.merchant?.report_price || 7000);
           const salary = deliveredCount * pricePerDelivery;
 
           const name =
-            reportType === 'driver'
+            typeToUse === 'driver'
               ? groupDeliveries[0]?.driver?.username || 'Unknown'
-              : groupDeliveries[0]?.merchant?.username || 'Unknown';
+              : groupDeliveries[0]?.merchant?.username || (isCustomer && user?.username ? user.username : 'Unknown');
 
           return {
             dateRange: `${startDate} ~ ${endDate}`,
@@ -153,7 +208,9 @@ export default function ReportPage() {
 
   const groupDeliveriesByType = (
     deliveries: Delivery[],
-    type: ReportType
+    type: ReportType,
+    isCustomer: boolean = false,
+    user: any = null
   ): Record<string, Delivery[]> => {
     const grouped: Record<string, Delivery[]> = {};
 
@@ -165,8 +222,9 @@ export default function ReportPage() {
         // Group by driver username, or 'No Driver' if null
         key = delivery.driver?.username || 'No Driver';
       } else {
-        // Group by merchant username
-        key = delivery.merchant?.username || 'Unknown Merchant';
+        // Group by merchant username (for both 'now' and 'later')
+        // For customers, use their username if merchant username is missing
+        key = delivery.merchant?.username || (isCustomer && user?.username ? user.username : 'Unknown Merchant');
       }
 
       if (!grouped[key]) {
@@ -214,38 +272,49 @@ export default function ReportPage() {
       return;
     }
 
+    // Determine report type to use
+    const typeToUse = isCustomer ? 'now' : reportType;
+
     // Prepare data for Excel
+    const headers = ['Огноо'];
+    if (!isCustomer) {
+      headers.push(typeToUse === 'driver' ? 'Жолооч' : 'Дэлгүүр');
+    }
+    headers.push('Хүргэсэн хүргэлт', 'Нийт хүргэлт', 'Нийт тооцоо', 'Цалин', 'зөрүү');
+
     const excelData = [
       // Headers
-      [
-        'Огноо',
-        reportType === 'driver' ? 'Жолооч' : 'Дэлгүүр',
-        'Хүргэсэн хүргэлт',
-        'Нийт хүргэлт',
-        'Нийт тооцоо',
-        'Цалин',
-        'зөрүү',
-      ],
+      headers,
       // Data rows
-      ...reportData.map((row) => [
-        row.dateRange,
-        row.name,
-        row.deliveredDeliveries,
-        row.totalDeliveries,
-        row.totalPrice,
-        row.salary,
-        row.totalPrice - row.salary,
-      ]),
+      ...reportData.map((row) => {
+        const rowData: (string | number)[] = [row.dateRange];
+        if (!isCustomer) {
+          rowData.push(row.name);
+        }
+        rowData.push(
+          row.deliveredDeliveries,
+          row.totalDeliveries,
+          row.totalPrice,
+          row.salary,
+          row.totalPrice - row.salary
+        );
+        return rowData;
+      }),
       // Totals row
-      [
-        'Нийт',
-        '',
-        totals.deliveredDeliveries,
-        totals.totalDeliveries,
-        totals.totalPrice,
-        totals.salary,
-        totals.difference,
-      ],
+      (() => {
+        const totalsRow: (string | number)[] = ['Нийт'];
+        if (!isCustomer) {
+          totalsRow.push('');
+        }
+        totalsRow.push(
+          totals.deliveredDeliveries,
+          totals.totalDeliveries,
+          totals.totalPrice,
+          totals.salary,
+          totals.difference
+        );
+        return totalsRow;
+      })(),
     ];
 
     // Create workbook and worksheet
@@ -253,22 +322,25 @@ export default function ReportPage() {
     const ws = XLSX.utils.aoa_to_sheet(excelData);
 
     // Set column widths
-    ws['!cols'] = [
-      { wch: 20 }, // Огноо
-      { wch: 20 }, // Жолооч/Дэлгүүр
+    const columnWidths = [{ wch: 20 }]; // Огноо
+    if (!isCustomer) {
+      columnWidths.push({ wch: 20 }); // Жолооч/Дэлгүүр
+    }
+    columnWidths.push(
       { wch: 18 }, // Хүргэсэн хүргэлт
       { wch: 15 }, // Нийт хүргэлт
       { wch: 15 }, // Нийт тооцоо
       { wch: 15 }, // Цалин
-      { wch: 15 }, // зөрүү
-    ];
+      { wch: 15 }  // зөрүү
+    );
+    ws['!cols'] = columnWidths;
 
     XLSX.utils.book_append_sheet(wb, ws, 'Report');
 
     // Generate filename with date range
     const startDate = dayjs(dateRange[0]).format('YYYY-MM-DD');
     const endDate = dayjs(dateRange[1]).format('YYYY-MM-DD');
-    const filename = `Report_${startDate}_${endDate}_${reportType}.xlsx`;
+    const filename = `Report_${startDate}_${endDate}_${typeToUse}.xlsx`;
 
     // Save file
     XLSX.writeFile(wb, filename);
@@ -306,53 +378,58 @@ export default function ReportPage() {
           />
         </div>
 
-        {/* Report Type */}
-        <Select
-          value={reportType}
-          onValueChange={(value) => setReportType(value as ReportType)}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Report Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="driver">Driver</SelectItem>
-            <SelectItem value="merchant">Merchant</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Report Type - Hide for customers (role 2) */}
+        {!isCustomer && (
+          <Select
+            value={reportType}
+            onValueChange={(value) => setReportType(value as ReportType)}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Report Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="driver">Driver</SelectItem>
+              <SelectItem value="now">Now</SelectItem>
+              <SelectItem value="later">Later</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
 
-        {/* Conditional Select - Driver or Merchant */}
-        {reportType === 'driver' ? (
-          <SearchableSelect
-            options={[
-              { value: 'all', label: 'All Drivers' },
-              ...drivers.map((driver) => ({
-                value: driver.id.toString(),
-                label: driver.username,
-              })),
-            ]}
-            value={selectedId?.toString() || 'all'}
-            onValueChange={(value) =>
-              setSelectedId(value === 'all' ? null : parseInt(value))
-            }
-            placeholder="Select Driver"
-            className="w-48"
-          />
-        ) : (
-          <SearchableSelect
-            options={[
-              { value: 'all', label: 'All Merchants' },
-              ...merchants.map((merchant) => ({
-                value: merchant.id.toString(),
-                label: merchant.username,
-              })),
-            ]}
-            value={selectedId?.toString() || 'all'}
-            onValueChange={(value) =>
-              setSelectedId(value === 'all' ? null : parseInt(value))
-            }
-            placeholder="Select Merchant"
-            className="w-48"
-          />
+        {/* Conditional Select - Driver or Merchant - Hide for customers (role 2) */}
+        {!isCustomer && (
+          reportType === 'driver' ? (
+            <SearchableSelect
+              options={[
+                { value: 'all', label: 'All Drivers' },
+                ...drivers.map((driver) => ({
+                  value: driver.id.toString(),
+                  label: driver.username,
+                })),
+              ]}
+              value={selectedId?.toString() || 'all'}
+              onValueChange={(value) =>
+                setSelectedId(value === 'all' ? null : parseInt(value))
+              }
+              placeholder="Select Driver"
+              className="w-48"
+            />
+          ) : (
+            <SearchableSelect
+              options={[
+                { value: 'all', label: 'All Merchants' },
+                ...merchants.map((merchant) => ({
+                  value: merchant.id.toString(),
+                  label: merchant.username,
+                })),
+              ]}
+              value={selectedId?.toString() || 'all'}
+              onValueChange={(value) =>
+                setSelectedId(value === 'all' ? null : parseInt(value))
+              }
+              placeholder="Select Merchant"
+              className="w-48"
+            />
+          )
         )}
 
         {/* Submit Button */}
@@ -376,9 +453,11 @@ export default function ReportPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Огноо</TableHead>
-              <TableHead>
-                {reportType === 'driver' ? 'Жолооч' : 'Дэлгүүр'}
-              </TableHead>
+              {!isCustomer && (
+                <TableHead>
+                  {(isCustomer ? 'now' : reportType) === 'driver' ? 'Жолооч' : 'Дэлгүүр'}
+                </TableHead>
+              )}
               <TableHead>Хүргэсэн хүргэлт</TableHead>
               <TableHead>Нийт хүргэлт</TableHead>
               <TableHead>Нийт тооцоо</TableHead>
@@ -389,13 +468,13 @@ export default function ReportPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={isCustomer ? 6 : 7} className="text-center py-8">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : reportData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={isCustomer ? 6 : 7} className="text-center py-8 text-gray-500">
                   No data available for the selected filters
                 </TableCell>
               </TableRow>
@@ -404,7 +483,9 @@ export default function ReportPage() {
                 {reportData.map((row, index) => (
                   <TableRow key={index}>
                     <TableCell>{row.dateRange}</TableCell>
-                    <TableCell className="font-medium">{row.name}</TableCell>
+                    {!isCustomer && (
+                      <TableCell className="font-medium">{row.name}</TableCell>
+                    )}
                     <TableCell>{row.deliveredDeliveries}</TableCell>
                     <TableCell>{row.totalDeliveries}</TableCell>
                     <TableCell>{formatCurrency(row.totalPrice)} ₮</TableCell>
@@ -419,7 +500,7 @@ export default function ReportPage() {
                 {/* Totals Row */}
                 <TableRow className="bg-gray-50 font-bold">
                   <TableCell className="font-bold">Нийт</TableCell>
-                  <TableCell className="font-bold"></TableCell>
+                  {!isCustomer && <TableCell className="font-bold"></TableCell>}
                   <TableCell className="font-bold">{totals.deliveredDeliveries}</TableCell>
                   <TableCell className="font-bold">{totals.totalDeliveries}</TableCell>
                   <TableCell className="font-bold">

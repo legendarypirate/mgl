@@ -130,7 +130,7 @@ const menuItems: MenuItemType[] = [
         key: "/admin/report",
         icon: <FileText className="w-4 h-4" />,
         label: "Тайлан",
-        permission: "log:view_log",
+        permission: "reports:view_reports",
       }
     ],
   },

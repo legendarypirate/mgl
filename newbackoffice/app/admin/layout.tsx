@@ -64,8 +64,8 @@ const menuItems: MenuItemType[] = [
     label: "Тайлан",
     permission: "reports:view_reports",
     children: [
-      { key: "/admin/report", label: "Тайлан", permission: "log:view_log" },
-      { key: "/admin/summary", label: "Тайлан жагсаалт", permission: "reports:view_reports" },
+      { key: "/admin/report", label: "Тайлан", permission: "reports:view_reports" },
+      { key: "/admin/summary", label: "Тайлан жагсаалт", permission: "log:view_log" },
     ],
   },
   { key: "/admin/log", label: "Үйлдлийн лог", permission: "log:view_log" },

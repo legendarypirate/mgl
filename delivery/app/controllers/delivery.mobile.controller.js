@@ -39,7 +39,15 @@ exports.findDriverDeliveriesWithStatus = (req, res) => {
       where: {
           driver_id: driverId,
           status: 2
-      }
+      },
+      include: [
+        {
+          model: User,
+          as: 'merchant',
+          attributes: ['username']
+        }
+      ]
+      // delivery_date is automatically included since it's in the model
   })
   .then(data => {
       res.send({
@@ -336,7 +344,7 @@ exports.completeDelivery = async (req, res) => {
     }
 
     const id = req.params.id;
-    const { status, driver_comment } = req.body;
+    const { status, driver_comment, delivery_date } = req.body;
 
     if (!status) {
       return res.status(400).send({
@@ -367,6 +375,11 @@ exports.completeDelivery = async (req, res) => {
       // ✅ Add driver comment if provided
       if (driver_comment !== undefined) {
         updateData.driver_comment = driver_comment;
+      }
+
+      // ✅ Add delivery_date if provided (for postpone status 6)
+      if (delivery_date !== undefined && delivery_date !== null && delivery_date !== '') {
+        updateData.delivery_date = delivery_date;
       }
 
       // ✅ If status is 3 (delivered) and image is provided, upload to Cloudinary

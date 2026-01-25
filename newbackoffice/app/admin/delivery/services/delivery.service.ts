@@ -240,7 +240,7 @@ export const fetchRegions = async (): Promise<Region[]> => {
 };
 
 // Fetch products/goods
-export const fetchProducts = async (merchantId: number): Promise<Array<{ id: string; name: string }>> => {
+export const fetchProducts = async (merchantId: number): Promise<Array<{ id: string; name: string; stock: number }>> => {
   const response = await fetch(`${API_URL}/api/good?merchant_id=${merchantId}`, {
     headers: getAuthHeaders(),
   });
@@ -250,6 +250,7 @@ export const fetchProducts = async (merchantId: number): Promise<Array<{ id: str
     return result.data.map((item: any) => ({
       id: item.id.toString(),
       name: item.name,
+      stock: item.stock || 0,
     }));
   }
   throw new Error('Failed to fetch products');

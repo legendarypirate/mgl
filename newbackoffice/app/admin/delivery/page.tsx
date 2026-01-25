@@ -74,6 +74,7 @@ function DeliveryPageContent() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [loading, setLoading] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Filters
   const [phoneFilter, setPhoneFilter] = useState('');
@@ -90,7 +91,7 @@ function DeliveryPageContent() {
   // Form/Drawer
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [pullFromWarehouse, setPullFromWarehouse] = useState(false);
-  const [products, setProducts] = useState<Array<{ id: string; name: string }>>([]);
+  const [products, setProducts] = useState<Array<{ id: string; name: string; stock: number }>>([]);
 
   // Modals
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
@@ -197,6 +198,7 @@ function DeliveryPageContent() {
     dateRange,
     isMerchant,
     merchantId,
+    refreshTrigger,
   ]);
 
   // Handlers
@@ -224,19 +226,9 @@ function DeliveryPageContent() {
     toast.success('Амжилттай бүртгэгдлээ');
     setPullFromWarehouse(false);
     setProducts([]);
-    // Refresh deliveries
-    const filters: Filters = {
-      phone: phoneFilter || undefined,
-      merchantId: merchantFilter || (isMerchant ? merchantId : undefined),
-      driverId: driverFilter || undefined,
-      districtId: districtFilter || undefined,
-      statusIds: selectedStatuses.length > 0 ? selectedStatuses : undefined,
-      startDate: dateRange[0] ? dateRange[0].toISOString().split('T')[0] : undefined,
-      endDate: dateRange[1] ? dateRange[1].toISOString().split('T')[0] : undefined,
-    };
-    const result = await fetchDeliveries(filters, pagination);
-    setDeliveries(result.data);
-    setPagination((prev) => ({ ...prev, total: result.pagination.total }));
+    // Refresh deliveries - reset to page 1 to show new delivery
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   const handleEdit = async () => {
@@ -250,18 +242,8 @@ function DeliveryPageContent() {
       });
       toast.success('Амжилттай шинэчлэгдлээ');
       setIsEditModalOpen(false);
-      // Refresh deliveries
-      const filters: Filters = {
-        phone: phoneFilter || undefined,
-        merchantId: merchantFilter || (isMerchant ? merchantId : undefined),
-        driverId: driverFilter || undefined,
-        districtId: districtFilter || undefined,
-        statusIds: selectedStatuses.length > 0 ? selectedStatuses : undefined,
-        startDate: dateRange[0] ? dateRange[0].toISOString().split('T')[0] : undefined,
-        endDate: dateRange[1] ? dateRange[1].toISOString().split('T')[0] : undefined,
-      };
-      const result = await fetchDeliveries(filters, pagination);
-      setDeliveries(result.data);
+      // Refresh deliveries - trigger useEffect
+      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       toast.error('Шинэчлэхэд алдаа гарлаа');
     }
@@ -284,18 +266,8 @@ function DeliveryPageContent() {
       await deleteDeliveries(selectedRowKeys);
       toast.success('Амжилттай устгагдлаа');
       setSelectedRowKeys([]);
-      // Refresh deliveries
-      const filters: Filters = {
-        phone: phoneFilter || undefined,
-        merchantId: merchantFilter || (isMerchant ? merchantId : undefined),
-        driverId: driverFilter || undefined,
-        districtId: districtFilter || undefined,
-        statusIds: selectedStatuses.length > 0 ? selectedStatuses : undefined,
-        startDate: dateRange[0] ? dateRange[0].toISOString().split('T')[0] : undefined,
-        endDate: dateRange[1] ? dateRange[1].toISOString().split('T')[0] : undefined,
-      };
-      const result = await fetchDeliveries(filters, pagination);
-      setDeliveries(result.data);
+      // Refresh deliveries - trigger useEffect
+      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       toast.error('Устгахад алдаа гарлаа');
     }
@@ -320,18 +292,8 @@ function DeliveryPageContent() {
       setIsDriverModalOpen(false);
       setSelectedDriverId(null);
       setSelectedRowKeys([]);
-      // Refresh deliveries
-      const filters: Filters = {
-        phone: phoneFilter || undefined,
-        merchantId: merchantFilter || (isMerchant ? merchantId : undefined),
-        driverId: driverFilter || undefined,
-        districtId: districtFilter || undefined,
-        statusIds: selectedStatuses.length > 0 ? selectedStatuses : undefined,
-        startDate: dateRange[0] ? dateRange[0].toISOString().split('T')[0] : undefined,
-        endDate: dateRange[1] ? dateRange[1].toISOString().split('T')[0] : undefined,
-      };
-      const result = await fetchDeliveries(filters, pagination);
-      setDeliveries(result.data);
+      // Refresh deliveries - trigger useEffect
+      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       toast.error('Хуваарилахад алдаа гарлаа');
     }
@@ -366,18 +328,8 @@ function DeliveryPageContent() {
       setIsDeliveryDateModalOpen(false);
       setBulkDeliveryDate('');
       setSelectedRowKeys([]);
-      // Refresh deliveries
-      const filters: Filters = {
-        phone: phoneFilter || undefined,
-        merchantId: merchantFilter || (isMerchant ? merchantId : undefined),
-        driverId: driverFilter || undefined,
-        districtId: districtFilter || undefined,
-        statusIds: selectedStatuses.length > 0 ? selectedStatuses : undefined,
-        startDate: dateRange[0] ? dateRange[0].toISOString().split('T')[0] : undefined,
-        endDate: dateRange[1] ? dateRange[1].toISOString().split('T')[0] : undefined,
-      };
-      const result = await fetchDeliveries(filters, pagination);
-      setDeliveries(result.data);
+      // Refresh deliveries - trigger useEffect
+      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       toast.error('Огноо өөрчлөхөд алдаа гарлаа');
     }
@@ -394,18 +346,8 @@ function DeliveryPageContent() {
       setIsStatusModalOpen(false);
       setSelectedStatusId(null);
       setSelectedRowKeys([]);
-      // Refresh deliveries
-      const filters: Filters = {
-        phone: phoneFilter || undefined,
-        merchantId: merchantFilter || (isMerchant ? merchantId : undefined),
-        driverId: driverFilter || undefined,
-        districtId: districtFilter || undefined,
-        statusIds: selectedStatuses.length > 0 ? selectedStatuses : undefined,
-        startDate: dateRange[0] ? dateRange[0].toISOString().split('T')[0] : undefined,
-        endDate: dateRange[1] ? dateRange[1].toISOString().split('T')[0] : undefined,
-      };
-      const result = await fetchDeliveries(filters, pagination);
-      setDeliveries(result.data);
+      // Refresh deliveries - trigger useEffect
+      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       toast.error('Төлөв өөрчлөхөд алдаа гарлаа');
     }
@@ -469,18 +411,9 @@ function DeliveryPageContent() {
 
         const result = await importDeliveries(formatted);
         toast.success(`${result.inserted || formatted.length} хүргэлт амжилттай импортлогдлоо`);
-        // Refresh deliveries
-        const filters: Filters = {
-          phone: phoneFilter || undefined,
-          merchantId: merchantFilter || (isMerchant ? merchantId : undefined),
-          driverId: driverFilter || undefined,
-          districtId: districtFilter || undefined,
-          statusIds: selectedStatuses.length > 0 ? selectedStatuses : undefined,
-          startDate: dateRange[0] ? formatDateLocal(dateRange[0]) : undefined,
-          endDate: dateRange[1] ? formatDateLocal(dateRange[1]) : undefined,
-        };
-        const result2 = await fetchDeliveries(filters, pagination);
-        setDeliveries(result2.data);
+        // Refresh deliveries - reset to page 1 to show new deliveries
+        setPagination((prev) => ({ ...prev, current: 1 }));
+        setRefreshTrigger((prev) => prev + 1);
       } catch (error) {
         toast.error('Импорт хийхэд алдаа гарлаа');
       }
@@ -621,20 +554,115 @@ function DeliveryPageContent() {
     }
   };
 
-  const handleExportExcel = () => {
-    const selectedRows = deliveries.filter((item) => selectedRowKeys.includes(item.id));
-    const excelData = selectedRows.map((row) => ({
-      Дэлгүүр: row.merchant?.username ?? '-',
-      Хаяг: row.address,
-      Утас: row.phone,
-      Үнэ: row.price,
-      Тайлбар: row.comment ?? '-',
-    }));
+  const handleExportExcel = async () => {
+    if (selectedRowKeys.length === 0) return;
 
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Selected Deliveries');
-    XLSX.writeFile(workbook, 'selected_deliveries.xlsx');
+    try {
+      const selectedIds = selectedRowKeys.map((id) => Number(id));
+      const selectedRows = deliveries.filter((item) => selectedRowKeys.includes(item.id));
+      
+      // Fetch items for all selected deliveries (similar to print logic)
+      const missingIds = selectedIds.filter(
+        (id) => !expandedItems[id] && !loadingRows.includes(id)
+      );
+
+      if (missingIds.length > 0) {
+        setLoadingRows((prev) => [...prev, ...missingIds]);
+        const promises = missingIds.map((id) => fetchDeliveryItems(id));
+        const results = await Promise.all(promises);
+        const newExpandedItems = { ...expandedItems };
+        missingIds.forEach((id, index) => {
+          newExpandedItems[id] = results[index];
+        });
+        setExpandedItems(newExpandedItems);
+        setLoadingRows((prev) => prev.filter((id) => !missingIds.includes(id)));
+      }
+
+      // Get all items for selected deliveries
+      const allItems = { ...expandedItems };
+      for (const id of selectedIds) {
+        if (!allItems[id]) {
+          allItems[id] = await fetchDeliveryItems(id);
+        }
+      }
+
+      // Create rows with items (one row per item, similar to print logic)
+      const excelData: any[] = [];
+      const deliveryRowRanges: Array<{ startRow: number; endRow: number }> = [];
+      let currentRowIndex = 1; // Start at 1 (0 is header)
+      
+      selectedRows.forEach((row) => {
+        const items = allItems[row.id] || [];
+        const statusName = row.status_name?.status || '-';
+        const startRow = currentRowIndex;
+        
+        if (items.length === 0) {
+          // No items - create one row with empty good info
+          excelData.push({
+            Дэлгүүр: row.merchant?.username ?? '-',
+            Хаяг: row.address,
+            Утас: row.phone,
+            Бараа: '-',
+            Тоо: '-',
+            Төлөв: statusName,
+            Үнэ: row.price,
+            Тайлбар: row.comment ?? '-',
+          });
+          currentRowIndex++;
+        } else {
+          // Multiple items - create one row per item, but only populate delivery info in first row
+          items.forEach((item: DeliveryItem, itemIndex: number) => {
+            excelData.push({
+              Дэлгүүр: itemIndex === 0 ? row.merchant?.username ?? '-' : '',
+              Хаяг: itemIndex === 0 ? row.address : '',
+              Утас: itemIndex === 0 ? row.phone : '',
+              Бараа: item.good?.name || 'Unknown',
+              Тоо: item.quantity,
+              Төлөв: itemIndex === 0 ? statusName : '',
+              Үнэ: itemIndex === 0 ? row.price : '',
+              Тайлбар: itemIndex === 0 ? (row.comment ?? '-') : '',
+            });
+            currentRowIndex++;
+          });
+        }
+        
+        const endRow = currentRowIndex - 1;
+        if (endRow > startRow) {
+          // Multiple rows for this delivery - need to merge
+          deliveryRowRanges.push({ startRow, endRow });
+        }
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Merge cells for delivery-specific columns when there are multiple items
+      // Column indices: Дэлгүүр=0, Хаяг=1, Утас=2, Бараа=3, Тоо=4, Төлөв=5, Үнэ=6, Тайлбар=7
+      const columnsToMerge = [0, 1, 2, 5, 6, 7]; // Дэлгүүр, Хаяг, Утас, Төлөв, Үнэ, Тайлбар
+      
+      if (!worksheet['!merges']) {
+        worksheet['!merges'] = [];
+      }
+      
+      const merges = worksheet['!merges'];
+      if (merges) {
+        deliveryRowRanges.forEach(({ startRow, endRow }) => {
+          columnsToMerge.forEach((colIndex) => {
+            merges.push({
+              s: { r: startRow, c: colIndex }, // start row, column
+              e: { r: endRow, c: colIndex },   // end row, column
+            });
+          });
+        });
+      }
+      
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Selected Deliveries');
+      XLSX.writeFile(workbook, 'selected_deliveries.xlsx');
+      toast.success('Excel файл амжилттай экспортлогдлоо');
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast.error('Excel экспорт хийхэд алдаа гарлаа');
+    }
   };
 
   const hasPermission = (perm: string) => permissions.includes(perm);

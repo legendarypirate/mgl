@@ -1,4 +1,4 @@
-export type ReportType = 'driver' | 'merchant';
+export type ReportType = 'driver' | 'now' | 'later';
 
 export interface ReportRow {
   dateRange: string;
