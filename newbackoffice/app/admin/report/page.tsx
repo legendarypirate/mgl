@@ -75,10 +75,14 @@ export default function ReportPage() {
     loadUsers();
   }, [isCustomer]);
 
-  // Auto-load today's statistics on initial load
+  // Auto-load today's statistics on initial load (wait for user to be loaded)
   useEffect(() => {
-    loadReportData();
-  }, []);
+    // Only load if user is loaded (or if we're admin, we can load immediately)
+    // For merchants (role 2), we need user to be loaded to filter correctly
+    if (user !== null) {
+      loadReportData();
+    }
+  }, [user]);
 
   // Reset selected ID when report type changes
   useEffect(() => {
