@@ -113,7 +113,7 @@ export default function ReportPage() {
         // If a specific driver/merchant is selected, filter by it
         if (reportType === 'driver' && selectedId) {
           filters.driverId = selectedId;
-        } else if ((reportType === 'now' || reportType === 'later') && selectedId) {
+        } else if ((reportType === 'now' || reportType === 'later' || reportType === 'merchant') && selectedId) {
           filters.merchantId = selectedId;
         }
       }
@@ -127,6 +127,7 @@ export default function ReportPage() {
 
       // Filter merchants by зөрүү (difference) based on report type
       // Skip this filtering for customers (role 2) - show all their deliveries
+      // For 'merchant' type, show all merchants (sum of now + later)
       let deliveriesToProcess = filteredDeliveries;
       if (!isCustomer && (reportType === 'now' || reportType === 'later')) {
         // Group by merchant first to calculate difference
@@ -151,12 +152,14 @@ export default function ReportPage() {
           const difference = totalPrice - salary;
 
           // Now: difference >= 0, Later: difference < 0
+          // Merchant: show all (no filtering by difference)
           if ((reportType === 'now' && difference >= 0) || 
               (reportType === 'later' && difference < 0)) {
             deliveriesToProcess.push(...merchantDeliveries);
           }
         });
       }
+      // For 'merchant' type, use all filtered deliveries (no difference filtering)
 
       // Group deliveries by driver or merchant
       // For customers, always group by merchant (their own data)
@@ -226,7 +229,7 @@ export default function ReportPage() {
         // Group by driver username, or 'No Driver' if null
         key = delivery.driver?.username || 'No Driver';
       } else {
-        // Group by merchant username (for both 'now' and 'later')
+        // Group by merchant username (for 'now', 'later', and 'merchant')
         key = delivery.merchant?.username || 'Unknown Merchant';
       }
 
@@ -394,6 +397,7 @@ export default function ReportPage() {
               <SelectItem value="driver">Driver</SelectItem>
               <SelectItem value="now">Now</SelectItem>
               <SelectItem value="later">Later</SelectItem>
+              <SelectItem value="merchant">Merchant</SelectItem>
             </SelectContent>
           </Select>
         )}
