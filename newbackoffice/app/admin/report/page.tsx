@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { SearchableSelect, SearchableSelectOption } from '@/components/ui/searchable-select';
-import { fetchReportDeliveries } from './services/report.service';
+import { fetchReportDeliveries, fetchReportOrders, Order } from './services/report.service';
 import { fetchDrivers, fetchMerchants } from '../delivery/services/delivery.service';
 import { Delivery, User } from '../delivery/types/delivery';
 import { ReportRow, ReportType } from './types/report';
@@ -122,21 +122,33 @@ export default function ReportPage() {
         }
       }
 
-      const deliveries = await fetchReportDeliveries(filters);
+      const [deliveries, orders] = await Promise.all([
+        fetchReportDeliveries(filters),
+        fetchReportOrders(filters)
+      ]);
 
-      // Filter to only include deliveries with status 3 (already filtered in API, but double-check)
+      // Filter to include deliveries with status 3 (delivered) and status 5 (хаягаар очсон)
       const filteredDeliveries = deliveries.filter(
+        (d) => d.status === 3 || d.status === '3' || d.status === 5 || d.status === '5'
+      );
+      
+      // Separate status 3 and status 5 deliveries
+      const status3Deliveries = filteredDeliveries.filter(
         (d) => d.status === 3 || d.status === '3'
+      );
+      const status5Deliveries = filteredDeliveries.filter(
+        (d) => d.status === 5 || d.status === '5'
       );
 
       // Filter merchants by зөрүү (difference) based on report type
       // Skip this filtering for customers (role 2) - show all their deliveries
       // For 'merchant' type, show all merchants (sum of now + later)
-      let deliveriesToProcess = filteredDeliveries;
+      let deliveriesToProcess = status3Deliveries;
+      let status5DeliveriesToProcess = status5Deliveries;
       if (!isCustomer && (reportType === 'now' || reportType === 'later')) {
-        // Group by merchant first to calculate difference
+        // Group by merchant first to calculate difference (for status 3)
         const merchantGroups: Record<string, Delivery[]> = {};
-        filteredDeliveries.forEach((delivery) => {
+        status3Deliveries.forEach((delivery) => {
           const key = delivery.merchant?.username || 'Unknown Merchant';
           if (!merchantGroups[key]) {
             merchantGroups[key] = [];
@@ -144,7 +156,7 @@ export default function ReportPage() {
           merchantGroups[key].push(delivery);
         });
 
-        // Filter merchants based on зөрүү
+        // Filter merchants based on зөрүү (for status 3)
         deliveriesToProcess = [];
         Object.entries(merchantGroups).forEach(([merchantName, merchantDeliveries]) => {
           const totalPrice = merchantDeliveries.reduce(
@@ -162,6 +174,25 @@ export default function ReportPage() {
             deliveriesToProcess.push(...merchantDeliveries);
           }
         });
+        
+        // Also filter status 5 deliveries by the same merchants
+        const filteredMerchantNames = new Set(Object.keys(merchantGroups).filter((merchantName) => {
+          const merchantDeliveries = merchantGroups[merchantName];
+          const totalPrice = merchantDeliveries.reduce(
+            (sum, d) => sum + parseFloat(d.price.toString()),
+            0
+          );
+          const pricePerDelivery = merchantDeliveries[0]?.merchant?.report_price || 7000;
+          const salary = merchantDeliveries.length * pricePerDelivery;
+          const difference = totalPrice - salary;
+          return (reportType === 'now' && difference >= 0) || 
+                 (reportType === 'later' && difference < 0);
+        }));
+        
+        status5DeliveriesToProcess = status5Deliveries.filter((d) => {
+          const merchantName = d.merchant?.username || 'Unknown Merchant';
+          return filteredMerchantNames.has(merchantName);
+        });
       }
       // For 'merchant' type, use all filtered deliveries (no difference filtering)
 
@@ -169,6 +200,10 @@ export default function ReportPage() {
       // For customers, always group by merchant (their own data)
       const typeToUse = isCustomer ? 'now' : reportType;
       const groupedData = groupDeliveriesByType(deliveriesToProcess, typeToUse, isCustomer, user);
+      const groupedStatus5Data = groupDeliveriesByType(status5DeliveriesToProcess, typeToUse, isCustomer, user);
+      
+      // Group orders by driver or merchant (same grouping logic as deliveries)
+      const groupedOrders = groupOrdersByType(orders, typeToUse, isCustomer, user);
 
       // Calculate statistics for each group
       const reportRows: ReportRow[] = Object.entries(groupedData).map(
@@ -186,7 +221,27 @@ export default function ReportPage() {
           const pricePerDelivery = typeToUse === 'driver' 
             ? 5000 
             : (groupDeliveries[0]?.merchant?.report_price || 7000);
-          const salary = deliveredCount * pricePerDelivery;
+          
+          // Get status 5 deliveries for the same group
+          const status5GroupDeliveries = groupedStatus5Data[id] || [];
+          const status5Count = status5GroupDeliveries.length;
+          
+          // Calculate base salary from delivered deliveries
+          let salary = deliveredCount * pricePerDelivery;
+          
+          // Add status 5 amounts to salary: 5k for driver, 7k for others
+          if (typeToUse === 'driver') {
+            salary += status5Count * 5000;
+          } else {
+            salary += status5Count * 7000;
+          }
+
+          // Get orders with status 3 for the same group
+          const groupOrders = groupedOrders[id] || [];
+          const orderCount = groupOrders.length;
+          
+          // Add 5000 to salary for each order with status 3 (for both merchant and driver)
+          salary += orderCount * 5000;
 
           const name =
             typeToUse === 'driver'
@@ -197,12 +252,88 @@ export default function ReportPage() {
             dateRange: `${startDate} ~ ${endDate}`,
             name,
             deliveredDeliveries: deliveredCount,
-            totalDeliveries: totalCount,
+            totalDeliveries: deliveredCount + status5Count, // Sum of delivered + status5
             totalPrice,
             salary,
+            status5Deliveries: status5Count,
+            status5MerchantAmount: 0, // Keep for backward compatibility but not used
+            status5DriverAmount: 0, // Keep for backward compatibility but not used
+            orderCount, // захиалгын тоо
           };
         }
       );
+      
+      // Also include groups that only have status 5 deliveries
+      Object.entries(groupedStatus5Data).forEach(([id, status5GroupDeliveries]) => {
+        if (!groupedData[id]) {
+          // This group only has status 5 deliveries
+          const typeToUse = isCustomer ? 'now' : reportType;
+          const name =
+            typeToUse === 'driver'
+              ? status5GroupDeliveries[0]?.driver?.username || 'Unknown'
+              : (isCustomer && user?.username ? user.username : status5GroupDeliveries[0]?.merchant?.username || 'Unknown');
+          
+          const status5Count = status5GroupDeliveries.length;
+          
+          // Calculate salary for status 5 only groups: 5k for driver, 7k for others
+          let salary = 0;
+          if (typeToUse === 'driver') {
+            salary = status5Count * 5000;
+          } else {
+            salary = status5Count * 7000;
+          }
+          
+          // Get orders with status 3 for the same group
+          const groupOrders = groupedOrders[id] || [];
+          const orderCount = groupOrders.length;
+          
+          // Add 5000 to salary for each order with status 3 (for both merchant and driver)
+          salary += orderCount * 5000;
+          
+          reportRows.push({
+            dateRange: `${startDate} ~ ${endDate}`,
+            name,
+            deliveredDeliveries: 0,
+            totalDeliveries: status5Count, // Sum of delivered (0) + status5
+            totalPrice: 0,
+            salary,
+            status5Deliveries: status5Count,
+            status5MerchantAmount: 0, // Keep for backward compatibility but not used
+            status5DriverAmount: 0, // Keep for backward compatibility but not used
+            orderCount, // захиалгын тоо
+          });
+        }
+      });
+
+      // Also include groups that only have orders (no deliveries)
+      Object.entries(groupedOrders).forEach(([id, groupOrders]) => {
+        if (!groupedData[id] && !groupedStatus5Data[id]) {
+          // This group only has orders
+          const typeToUse = isCustomer ? 'now' : reportType;
+          const name =
+            typeToUse === 'driver'
+              ? groupOrders[0]?.driver?.username || 'Unknown'
+              : (isCustomer && user?.username ? user.username : groupOrders[0]?.merchant?.username || 'Unknown');
+          
+          const orderCount = groupOrders.length;
+          
+          // Calculate salary: 5000 for each order with status 3 (for both merchant and driver)
+          const salary = orderCount * 5000;
+          
+          reportRows.push({
+            dateRange: `${startDate} ~ ${endDate}`,
+            name,
+            deliveredDeliveries: 0,
+            totalDeliveries: 0,
+            totalPrice: 0,
+            salary,
+            status5Deliveries: 0,
+            status5MerchantAmount: 0,
+            status5DriverAmount: 0,
+            orderCount, // захиалгын тоо
+          });
+        }
+      });
 
       setReportData(reportRows);
     } catch (error: any) {
@@ -246,6 +377,37 @@ export default function ReportPage() {
     return grouped;
   };
 
+  const groupOrdersByType = (
+    orders: Order[],
+    type: ReportType,
+    isCustomer: boolean = false,
+    user: any = null
+  ): Record<string, Order[]> => {
+    const grouped: Record<string, Order[]> = {};
+
+    orders.forEach((order) => {
+      // Group by username (same logic as deliveries)
+      let key: string;
+      if (isCustomer) {
+        // For merchants (customers), group ALL orders into a single group
+        key = 'merchant_summary';
+      } else if (type === 'driver') {
+        // Group by driver username, or 'No Driver' if null
+        key = order.driver?.username || 'No Driver';
+      } else {
+        // Group by merchant username (for 'now', 'later', and 'merchant')
+        key = order.merchant?.username || 'Unknown Merchant';
+      }
+
+      if (!grouped[key]) {
+        grouped[key] = [];
+      }
+      grouped[key].push(order);
+    });
+
+    return grouped;
+  };
+
   const handleSubmit = () => {
     loadReportData();
   };
@@ -265,6 +427,8 @@ export default function ReportPage() {
       acc.totalPrice += row.totalPrice;
       acc.salary += row.salary;
       acc.difference += row.totalPrice - row.salary;
+      acc.status5Deliveries += row.status5Deliveries;
+      acc.orderCount += row.orderCount || 0;
       return acc;
     },
     {
@@ -273,6 +437,8 @@ export default function ReportPage() {
       totalPrice: 0,
       salary: 0,
       difference: 0,
+      status5Deliveries: 0,
+      orderCount: 0,
     }
   );
 
@@ -290,7 +456,7 @@ export default function ReportPage() {
     if (!isCustomer) {
       headers.push(typeToUse === 'driver' ? 'Жолооч' : 'Дэлгүүр');
     }
-    headers.push('Хүргэсэн хүргэлт', 'Нийт хүргэлт', 'Нийт тооцоо', 'Цалин', 'зөрүү');
+    headers.push('Нийт хүргэлт', 'Хүргэсэн хүргэлт', 'Хаягаар очсон', 'Захиалгын тоо', 'Нийт тооцоо', 'Цалин', 'зөрүү');
 
     const excelData = [
       // Headers
@@ -302,8 +468,10 @@ export default function ReportPage() {
           rowData.push(row.name);
         }
         rowData.push(
-          row.deliveredDeliveries,
           row.totalDeliveries,
+          row.deliveredDeliveries,
+          row.status5Deliveries,
+          row.orderCount || 0,
           row.totalPrice,
           row.salary,
           row.totalPrice - row.salary
@@ -317,8 +485,10 @@ export default function ReportPage() {
           totalsRow.push('');
         }
         totalsRow.push(
-          totals.deliveredDeliveries,
           totals.totalDeliveries,
+          totals.deliveredDeliveries,
+          totals.status5Deliveries,
+          totals.orderCount,
           totals.totalPrice,
           totals.salary,
           totals.difference
@@ -337,8 +507,10 @@ export default function ReportPage() {
       columnWidths.push({ wch: 20 }); // Жолооч/Дэлгүүр
     }
     columnWidths.push(
-      { wch: 18 }, // Хүргэсэн хүргэлт
       { wch: 15 }, // Нийт хүргэлт
+      { wch: 18 }, // Хүргэсэн хүргэлт
+      { wch: 18 }, // Хаягаар очсон
+      { wch: 18 }, // Захиалгын тоо
       { wch: 15 }, // Нийт тооцоо
       { wch: 15 }, // Цалин
       { wch: 15 }  // зөрүү
@@ -469,8 +641,10 @@ export default function ReportPage() {
                   {(isCustomer ? 'now' : reportType) === 'driver' ? 'Жолооч' : 'Дэлгүүр'}
                 </TableHead>
               )}
-              <TableHead>Хүргэсэн хүргэлт</TableHead>
               <TableHead>Нийт хүргэлт</TableHead>
+              <TableHead>Хүргэсэн хүргэлт</TableHead>
+              <TableHead>Хаягаар очсон</TableHead>
+              <TableHead>Захиалгын тоо</TableHead>
               <TableHead>Нийт тооцоо</TableHead>
               <TableHead>Цалин</TableHead>
               <TableHead>зөрүү</TableHead>
@@ -479,13 +653,13 @@ export default function ReportPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={isCustomer ? 6 : 7} className="text-center py-8">
+                <TableCell colSpan={isCustomer ? 8 : 9} className="text-center py-8">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : reportData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isCustomer ? 6 : 7} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={isCustomer ? 8 : 9} className="text-center py-8 text-gray-500">
                   No data available for the selected filters
                 </TableCell>
               </TableRow>
@@ -497,8 +671,10 @@ export default function ReportPage() {
                     {!isCustomer && (
                       <TableCell className="font-medium">{row.name}</TableCell>
                     )}
-                    <TableCell>{row.deliveredDeliveries}</TableCell>
                     <TableCell>{row.totalDeliveries}</TableCell>
+                    <TableCell>{row.deliveredDeliveries}</TableCell>
+                    <TableCell>{row.status5Deliveries}</TableCell>
+                    <TableCell>{row.orderCount || 0}</TableCell>
                     <TableCell>{formatCurrency(row.totalPrice)} ₮</TableCell>
                     <TableCell className="font-semibold">
                       {formatCurrency(row.salary)} ₮
@@ -512,8 +688,10 @@ export default function ReportPage() {
                 <TableRow className="bg-gray-50 font-bold">
                   <TableCell className="font-bold">Нийт</TableCell>
                   {!isCustomer && <TableCell className="font-bold"></TableCell>}
-                  <TableCell className="font-bold">{totals.deliveredDeliveries}</TableCell>
                   <TableCell className="font-bold">{totals.totalDeliveries}</TableCell>
+                  <TableCell className="font-bold">{totals.deliveredDeliveries}</TableCell>
+                  <TableCell className="font-bold">{totals.status5Deliveries}</TableCell>
+                  <TableCell className="font-bold">{totals.orderCount}</TableCell>
                   <TableCell className="font-bold">
                     {formatCurrency(totals.totalPrice)} ₮
                   </TableCell>

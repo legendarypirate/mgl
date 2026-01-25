@@ -430,7 +430,7 @@ exports.completeDelivery = async (req, res) => {
         transaction: t,
       });
 
-      // ✅ If declined (status 5), move from in_delivery back to stock
+      // ✅ If declined (status 4), move from in_delivery back to stock
       if (statusInt === 4) {
         for (const item of items) {
           if (!item.good_id) continue;
@@ -454,6 +454,35 @@ exports.completeDelivery = async (req, res) => {
               amount: item.quantity,
               delivery_id: delivery.id,
               comment: `Жолооч цуцалсан (Delivery ID: ${delivery.delivery_id})`,
+            },
+            { transaction: t }
+          );
+        }
+      }
+      // ✅ If хаягаар очсон (status 5), move from in_delivery back to stock
+      else if (statusInt === 5) {
+        for (const item of items) {
+          if (!item.good_id) continue;
+          const good = await Good.findByPk(item.good_id, { transaction: t });
+          if (!good) continue;
+
+          // Move from in_delivery back to stock
+          await good.update(
+            {
+              stock: (good.stock || 0) + item.quantity,
+              in_delivery: Math.max(0, (good.in_delivery || 0) - item.quantity),
+            },
+            { transaction: t }
+          );
+
+          // Create history record
+          await db.good_histories.create(
+            {
+              good_id: item.good_id,
+              type: 4, // Delivery cancelled (back to stock)
+              amount: item.quantity,
+              delivery_id: delivery.id,
+              comment: `Хаягаар очсон (Delivery ID: ${delivery.delivery_id})`,
             },
             { transaction: t }
           );
