@@ -118,3 +118,16 @@ export const fetchDrivers = async (): Promise<User[]> => {
   throw new Error('Failed to fetch drivers');
 };
 
+// Delete order
+export const deleteOrder = async (id: number): Promise<void> => {
+  const response = await fetch(`${API_URL}/api/order/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.message || 'Failed to delete order');
+  }
+};
+

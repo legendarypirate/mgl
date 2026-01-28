@@ -5,6 +5,8 @@ import { Order, OrderStatus } from '../types/order';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface OrderTableProps {
@@ -14,6 +16,7 @@ interface OrderTableProps {
   onRowSelect: (keys: React.Key[]) => void;
   statusList: OrderStatus[];
   isMerchant?: boolean;
+  onDelete?: (id: number) => void;
 }
 
 export default function OrderTable({
@@ -23,6 +26,7 @@ export default function OrderTable({
   onRowSelect,
   statusList,
   isMerchant = false,
+  onDelete,
 }: OrderTableProps) {
   const isRowSelected = (id: number) => selectedRowKeys.includes(id);
 
@@ -89,6 +93,11 @@ export default function OrderTable({
                     <Skeleton className="h-4 w-24" />
                   </TableCell>
                 )}
+                {!isMerchant && onDelete && (
+                  <TableCell>
+                    <Skeleton className="h-4 w-20" />
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
@@ -110,13 +119,14 @@ export default function OrderTable({
             <TableHead>Төлөв</TableHead>
             <TableHead>Тайлбар</TableHead>
             {!isMerchant && <TableHead>Жолооч нэр</TableHead>}
+            {!isMerchant && onDelete && <TableHead className="w-20">Үйлдэл</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {orders.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={isMerchant ? 7 : 8}
+                colSpan={isMerchant ? 7 : (onDelete ? 9 : 8)}
                 className="text-center text-gray-400 py-8"
               >
                 Захиалга олдсонгүй
@@ -172,6 +182,20 @@ export default function OrderTable({
                   </TableCell>
                   {!isMerchant && (
                     <TableCell>{order.driver?.username || '-'}</TableCell>
+                  )}
+                  {!isMerchant && onDelete && (
+                    <TableCell>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(order.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   )}
                 </TableRow>
               );

@@ -280,26 +280,28 @@ exports.infoupdate = (req, res) => {
 };
 
 
-// Delete a category with the specified id in the request
+// Delete an order with the specified id in the request
 exports.delete = (req, res) => {
   const id = req.params.id;
 
-  category.destroy({
+  Order.destroy({
     where: { id: id }
   })
     .then(num => {
       if (num == 1) {
-        res.json({ success: true, message: "Category was deleted successfully!" });
-
+        res.json({ success: true, message: "Order was deleted successfully!" });
       } else {
-        res.send({
-          message: `Cannot delete Categories with id=${id}. Maybe category was not found!`
+        res.status(404).json({
+          success: false,
+          message: `Cannot delete order with id=${id}. Maybe order was not found!`
         });
       }
     })
     .catch(err => {
-      res.status(500).send({
-        message: "Could not delete category with id=" + id
+      res.status(500).json({
+        success: false,
+        message: "Could not delete order with id=" + id,
+        error: err.message
       });
     });
 };

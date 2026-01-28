@@ -19,6 +19,7 @@ import {
   allocateOrders,
   fetchMerchants,
   fetchDrivers,
+  deleteOrder,
 } from './services/order.service';
 
 export default function OrderPage() {
@@ -76,24 +77,6 @@ export default function OrderPage() {
 
     const saved = localStorage.getItem('permissions');
     if (saved) setPermissions(JSON.parse(saved));
-
-    const loadData = async () => {
-      try {
-        // Fetch merchants
-        if (!isMerchant) {
-          const merchantsData = await fetchMerchants();
-          setMerchants(merchantsData);
-        }
-
-        // Fetch orders
-        await loadOrders();
-      } catch (error) {
-        console.error('Error loading data:', error);
-        toast.error('Өгөгдөл ачааллахад алдаа гарлаа');
-      }
-    };
-
-    loadData();
   }, []);
 
   // Load orders
@@ -121,6 +104,21 @@ export default function OrderPage() {
     }
   };
 
+  // Load merchants when user is loaded (only for non-merchants)
+  useEffect(() => {
+    if (user !== null && user?.role !== 2) {
+      const loadMerchants = async () => {
+        try {
+          const merchantsData = await fetchMerchants();
+          setMerchants(merchantsData);
+        } catch (error) {
+          console.error('Error loading merchants:', error);
+        }
+      };
+      loadMerchants();
+    }
+  }, [user]);
+
   // Reload when filters or pagination changes
   useEffect(() => {
     if (user !== null) {
@@ -128,7 +126,7 @@ export default function OrderPage() {
       loadOrders();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phoneFilter, selectedStatuses, dateRange, pagination.current, pagination.pageSize, merchantId]);
+  }, [phoneFilter, selectedStatuses, dateRange, pagination.current, pagination.pageSize, merchantId, user]);
 
   // Handle create order
   const handleCreateOrder = async (data: any) => {
@@ -192,6 +190,22 @@ export default function OrderPage() {
 
   const hasPermission = (perm: string) => permissions.includes(perm);
 
+  // Handle delete order
+  const handleDeleteOrder = async (id: number) => {
+    if (!confirm('Та энэ захиалгыг устгахдаа итгэлтэй байна уу?')) {
+      return;
+    }
+
+    try {
+      await deleteOrder(id);
+      toast.success('Захиалга амжилттай устгалаа');
+      await loadOrders();
+    } catch (error: any) {
+      console.error('Error deleting order:', error);
+      toast.error(error.message || 'Захиалга устгахад алдаа гарлаа');
+    }
+  };
+
   return (
     <div className="w-full mt-6 px-4 pb-32">
       <div className="mb-6">
@@ -217,6 +231,7 @@ export default function OrderPage() {
         onRowSelect={setSelectedRowKeys}
         statusList={statusList}
         isMerchant={isMerchant}
+        onDelete={handleDeleteOrder}
       />
 
       <div className="mt-4 flex justify-between items-center">
