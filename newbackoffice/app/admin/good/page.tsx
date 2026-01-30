@@ -48,8 +48,8 @@ export default function GoodPage() {
   // User info
   const [user, setUser] = useState<any>(null);
   const [username, setUsername] = useState<string | null>(null);
-  const isMerchant = user?.role === 2;
-  const merchantId = isMerchant ? user?.id : null;
+  const isMerchant = user ? (user?.role === 2 || user?.role_id === 2) : false;
+  const merchantId = isMerchant ? (user?.id || user?.user_id || null) : null;
 
   // Load initial data
   useEffect(() => {
@@ -59,14 +59,28 @@ export default function GoodPage() {
     const storedUsername =
       typeof window !== 'undefined' ? localStorage.getItem('username') : null;
 
-    if (storedUser) setUser(JSON.parse(storedUser));
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Failed to parse user:', e);
+      }
+    }
     if (storedUsername) setUsername(storedUsername);
+  }, []);
+
+  // Load data after user is set
+  useEffect(() => {
+    if (!user) return; // Wait for user to be loaded
 
     const loadData = async () => {
       setLoading(true);
       try {
+        const currentIsMerchant = user?.role === 2 || user?.role_id === 2;
+        const currentMerchantId = currentIsMerchant ? (user?.id || user?.user_id || null) : null;
+
         const [goodsData, merchantsData, waresData] = await Promise.all([
-          fetchGoods(isMerchant ? merchantId : undefined).catch(() => []),
+          fetchGoods(currentIsMerchant ? currentMerchantId : undefined).catch(() => []),
           fetchMerchants().catch(() => []),
           fetchWares().catch(() => []),
         ]);
@@ -84,7 +98,7 @@ export default function GoodPage() {
     };
 
     loadData();
-  }, [isMerchant, merchantId]);
+  }, [user]);
 
   // Filter goods by merchant and search term
   useEffect(() => {
