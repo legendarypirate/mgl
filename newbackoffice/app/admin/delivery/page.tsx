@@ -68,6 +68,8 @@ function DeliveryPageContent() {
   const initialStatusIds = statusIdsParam
     ? statusIdsParam.split(',').map((id) => parseInt(id))
     : [];
+  const merchantIdParam = searchParams.get('merchant_id');
+  const initialMerchantId = merchantIdParam ? parseInt(merchantIdParam) : null;
 
   // State
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
@@ -78,7 +80,7 @@ function DeliveryPageContent() {
 
   // Filters
   const [phoneFilter, setPhoneFilter] = useState('');
-  const [merchantFilter, setMerchantFilter] = useState<number | null>(null);
+  const [merchantFilter, setMerchantFilter] = useState<number | null>(initialMerchantId);
   const [driverFilter, setDriverFilter] = useState<number | null>(null);
   const [districtFilter, setDistrictFilter] = useState<number | null>(null);
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>(initialStatusIds);

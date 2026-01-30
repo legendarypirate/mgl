@@ -43,7 +43,12 @@ export default function AdminHome() {
   }, []);
 
   const handleStatusClick = (statusId: number) => {
-    router.push(`/admin/delivery?status_ids=${statusId}`);
+    const params = new URLSearchParams();
+    params.set('status_ids', statusId.toString());
+    if (merchantId) {
+      params.set('merchant_id', merchantId.toString());
+    }
+    router.push(`/admin/delivery?${params.toString()}`);
   };
 
   return (
