@@ -259,6 +259,35 @@ exports.create = async (req, res) => {
     );
 
     if (req.body.items && Array.isArray(req.body.items)) {
+      // First, validate stock availability for all items before processing
+      const stockValidationErrors = [];
+      for (const item of req.body.items) {
+        const quantity = item.quantity || 1;
+        const good = await db.goods.findByPk(item.good_id, { transaction: t });
+        
+        if (!good) {
+          stockValidationErrors.push(`Бараа олдсонгүй (ID: ${item.good_id})`);
+          continue;
+        }
+
+        const currentStock = good.stock || 0;
+        if (currentStock < quantity) {
+          stockValidationErrors.push(
+            `"${good.name}" - Агуулахын үлдэгдэл хүрэлцэхгүй (Үлдэгдэл: ${currentStock}, Хүсэлт: ${quantity})`
+          );
+        }
+      }
+
+      // If any stock validation failed, rollback and return error
+      if (stockValidationErrors.length > 0) {
+        await t.rollback();
+        return res.status(400).json({
+          success: false,
+          message: "Агуулахын үлдэгдэл хүрэлцэхгүй",
+          errors: stockValidationErrors,
+        });
+      }
+
       const itemsToInsert = req.body.items.map((item) => ({
         delivery_id: delivery.id,
         good_id: item.good_id,
@@ -267,7 +296,7 @@ exports.create = async (req, res) => {
 
       await DeliveryItem.bulkCreate(itemsToInsert, { transaction: t });
 
-      // Move stock to in_delivery for each good
+      // Move stock to in_delivery for each good (now safe since we validated)
       for (const item of req.body.items) {
         const quantity = item.quantity || 1;
         const good = await db.goods.findByPk(item.good_id, { transaction: t });
@@ -379,10 +408,20 @@ exports.updateDeliveryItem = async (req, res) => {
       const good = await Good.findByPk(item.good_id, { transaction: t });
       if (good) {
         if (quantityDiff > 0) {
-          // Quantity increased - move from stock to in_delivery
+          // Quantity increased - validate stock availability first
+          const currentStock = good.stock || 0;
+          if (currentStock < quantityDiff) {
+            await t.rollback();
+            return res.status(400).json({
+              success: false,
+              message: `Агуулахын үлдэгдэл хүрэлцэхгүй. "${good.name}" - Үлдэгдэл: ${currentStock}, Хүсэлт: ${quantityDiff}`,
+            });
+          }
+          
+          // Move from stock to in_delivery
           await good.update(
             {
-              stock: Math.max(0, good.stock - quantityDiff),
+              stock: good.stock - quantityDiff,
               in_delivery: (good.in_delivery || 0) + quantityDiff,
             },
             { transaction: t }
