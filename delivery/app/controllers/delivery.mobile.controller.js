@@ -32,14 +32,34 @@ const upload = multer({
   }
 }).single('delivery_image');
 
-exports.findDriverDeliveriesWithStatus = (req, res) => {
+exports.findDriverDeliveriesWithStatus = async (req, res) => {
   const driverId = req.params.id;
+  const { startDate, endDate } = req.query;
 
-  Delivery.findAll({
-      where: {
-          driver_id: driverId,
-          status: 2
-      },
+  // Build where clause
+  const whereClause = {
+    driver_id: driverId,
+    status: 2
+  };
+
+  // Filter by delivery_date if provided
+  if (startDate && endDate) {
+    whereClause.delivery_date = {
+      [Op.between]: [startDate, endDate]
+    };
+  } else if (startDate) {
+    whereClause.delivery_date = {
+      [Op.gte]: startDate
+    };
+  } else if (endDate) {
+    whereClause.delivery_date = {
+      [Op.lte]: endDate
+    };
+  }
+
+  try {
+    const data = await Delivery.findAll({
+      where: whereClause,
       include: [
         {
           model: User,
@@ -47,19 +67,18 @@ exports.findDriverDeliveriesWithStatus = (req, res) => {
           attributes: ['username']
         }
       ]
-      // delivery_date is automatically included since it's in the model
-  })
-  .then(data => {
-      res.send({
-          success: true,
-          data: data
-      });
-  })
-  .catch(err => {
-      res.status(500).send({
-          message: err.message || "Some error occurred while retrieving deliveries."
-      });
-  });
+    });
+
+    res.send({
+      success: true,
+      data: data
+    });
+  } catch (err) {
+    res.status(500).send({
+      success: false,
+      message: err.message || "Some error occurred while retrieving deliveries."
+    });
+  }
 };
 
 exports.findWithStatus = async (req, res) => {
@@ -112,38 +131,61 @@ exports.findWithStatus = async (req, res) => {
   }
 };
 
-exports.findDeliveryDone = (req, res) => {
+exports.findDeliveryDone = async (req, res) => {
   const driverId = req.params.id;
-
-  // Calculate start and end of today (local time)
-  const now = new Date();
-  const startOfToday = new Date(now.setHours(0, 0, 0, 0));
-  const endOfToday = new Date(now.setHours(23, 59, 59, 999));
+  const { startDate, endDate } = req.query;
 
   // Build where clause
   const whereClause = {
     driver_id: driverId,
-    status: { [Op.in]: [3, 4, 5] },
-    delivered_at: {
-      [Op.between]: [startOfToday, endOfToday]
-    }
+    status: { [Op.in]: [3, 4, 5] }
   };
 
-  Delivery.findAll({
-    where: whereClause,
-    order: [['delivered_at', 'DESC']],
-  })
-    .then(data => {
-      res.send({
-        success: true,
-        data: data
-      });
-    })
-    .catch(err => {
-      res.status(500).send({
-        message: err.message || "Some error occurred while retrieving deliveries."
-      });
+  // Filter by delivery_date if provided, otherwise default to last 3 days
+  if (startDate && endDate) {
+    whereClause.delivery_date = {
+      [Op.between]: [startDate, endDate]
+    };
+  } else if (startDate) {
+    whereClause.delivery_date = {
+      [Op.gte]: startDate
+    };
+  } else if (endDate) {
+    whereClause.delivery_date = {
+      [Op.lte]: endDate
+    };
+  } else {
+    // Default: last 3 days
+    const endDateDefault = moment.tz("Asia/Ulaanbaatar").endOf("day");
+    const startDateDefault = moment.tz("Asia/Ulaanbaatar").subtract(2, 'days').startOf("day");
+    whereClause.delivery_date = {
+      [Op.between]: [startDateDefault.format('YYYY-MM-DD'), endDateDefault.format('YYYY-MM-DD')]
+    };
+  }
+
+  try {
+    const data = await Delivery.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: User,
+          as: 'merchant',
+          attributes: ['username']
+        }
+      ],
+      order: [['delivery_date', 'DESC'], ['id', 'DESC']],
     });
+
+    res.send({
+      success: true,
+      data: data
+    });
+  } catch (err) {
+    res.status(500).send({
+      success: false,
+      message: err.message || "Some error occurred while retrieving deliveries."
+    });
+  }
 };
 
 
