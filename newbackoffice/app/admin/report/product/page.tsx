@@ -203,21 +203,19 @@ export default function ProductReportPage() {
 
       if (items.length === 0) {
         excelData.push({
-          Огноо: dateRangeStr,
           'Хүргэлтийн огноо': deliveryDate,
+          ...(!isCustomer && { Дэлгүүр: delivery.merchant?.username || '-' }),
           Бараа: '-',
           Тоо: '-',
-          Дэлгүүр: !isCustomer ? (delivery.merchant?.username || '-') : undefined,
           Үнэ: delivery.price || 0,
         });
       } else {
         items.forEach((item, itemIndex) => {
           excelData.push({
-            Огноо: itemIndex === 0 ? dateRangeStr : '',
             'Хүргэлтийн огноо': itemIndex === 0 ? deliveryDate : '',
+            ...(!isCustomer && { Дэлгүүр: itemIndex === 0 ? (delivery.merchant?.username || '-') : '' }),
             Бараа: item.good?.name || 'Unknown',
             Тоо: item.quantity,
-            Дэлгүүр: !isCustomer && itemIndex === 0 ? (delivery.merchant?.username || '-') : (!isCustomer ? '' : undefined),
             Үнэ: itemIndex === 0 ? (delivery.price || 0) : '',
           });
         });
@@ -226,11 +224,10 @@ export default function ProductReportPage() {
 
     // Add totals row
     excelData.push({
-      Огноо: 'Нийт',
-      'Хүргэлтийн огноо': '',
+      'Хүргэлтийн огноо': 'Нийт',
+      ...(!isCustomer && { Дэлгүүр: '' }),
       Бараа: '',
       Тоо: totals.totalQuantity,
-      Дэлгүүр: !isCustomer ? '' : undefined,
       Үнэ: totals.totalPrice,
     });
 
@@ -322,7 +319,6 @@ export default function ProductReportPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Огноо</TableHead>
               <TableHead>Хүргэлтийн огноо</TableHead>
               {!isCustomer && <TableHead>Дэлгүүр</TableHead>}
               <TableHead>Бараа</TableHead>
@@ -333,13 +329,13 @@ export default function ProductReportPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={isCustomer ? 5 : 6} className="text-center py-8">
+                <TableCell colSpan={isCustomer ? 4 : 5} className="text-center py-8">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : deliveriesWithItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isCustomer ? 5 : 6} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={isCustomer ? 4 : 5} className="text-center py-8 text-gray-500">
                   No data available for the selected filters
                 </TableCell>
               </TableRow>
@@ -347,9 +343,6 @@ export default function ProductReportPage() {
               <>
                 {deliveriesWithItems.map((delivery) => {
                   const items = delivery.items || [];
-                  const startDate = dayjs(dateRange[0]).format('YYYY-MM-DD');
-                  const endDate = dayjs(dateRange[1]).format('YYYY-MM-DD');
-                  const dateRangeStr = `${startDate} ~ ${endDate}`;
                   const deliveryDate = delivery.delivery_date
                     ? format(new Date(delivery.delivery_date), 'yyyy-MM-dd')
                     : delivery.createdAt
@@ -359,7 +352,6 @@ export default function ProductReportPage() {
                   if (items.length === 0) {
                     return (
                       <TableRow key={delivery.id}>
-                        <TableCell>{dateRangeStr}</TableCell>
                         <TableCell>{deliveryDate}</TableCell>
                         {!isCustomer && (
                           <TableCell>{delivery.merchant?.username || '-'}</TableCell>
@@ -382,7 +374,6 @@ export default function ProductReportPage() {
                     >
                       {itemIndex === 0 && (
                         <>
-                          <TableCell rowSpan={items.length}>{dateRangeStr}</TableCell>
                           <TableCell rowSpan={items.length}>{deliveryDate}</TableCell>
                           {!isCustomer && (
                             <TableCell rowSpan={items.length}>
@@ -408,7 +399,6 @@ export default function ProductReportPage() {
                 {/* Totals Row */}
                 <TableRow className="bg-gray-50 font-bold">
                   <TableCell className="font-bold">Нийт</TableCell>
-                  <TableCell className="font-bold"></TableCell>
                   {!isCustomer && <TableCell className="font-bold"></TableCell>}
                   <TableCell className="font-bold"></TableCell>
                   <TableCell className="font-bold">{totals.totalQuantity}</TableCell>
