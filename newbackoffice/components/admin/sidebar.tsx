@@ -55,18 +55,31 @@ function filterMenuByPermission(
   userPermissions: string[]
 ): MenuItemType[] {
   return items
-    .filter((item) => hasPermission(item.permission || "", userPermissions))
     .map((item) => {
       if (item.children) {
-        return {
-          ...item,
-          children: filterMenuByPermission(item.children, userPermissions),
-        };
+        // Filter children first
+        const filteredChildren = filterMenuByPermission(item.children, userPermissions);
+        // Show parent if user has permission for parent OR has permission for any child
+        const hasParentPermission = hasPermission(item.permission || "", userPermissions);
+        const hasAnyChildPermission = filteredChildren.length > 0;
+        
+        if (hasParentPermission || hasAnyChildPermission) {
+          return {
+            ...item,
+            children: filteredChildren,
+          };
+        }
+        return null;
       }
-      return item;
+      // For leaf items, check permission
+      if (hasPermission(item.permission || "", userPermissions)) {
+        return item;
+      }
+      return null;
     })
-    .filter((item) => {
-      // Remove parent items if they have no visible children
+    .filter((item): item is MenuItemType => {
+      // Remove null items and parent items with no visible children
+      if (!item) return false;
       if (item.children && item.children.length === 0) return false;
       return true;
     });
@@ -130,6 +143,12 @@ const menuItems: MenuItemType[] = [
         key: "/admin/report",
         icon: <FileText className="w-4 h-4" />,
         label: "Тайлан",
+        permission: "reports:view_reports",
+      },
+      {
+        key: "/admin/report/product",
+        icon: <FileText className="w-4 h-4" />,
+        label: "Барааны тайлан",
         permission: "reports:view_reports",
       }
     ],
@@ -263,15 +282,24 @@ export function Sidebar() {
       );
     }
 
+    const canAccess = hasPermission(item.permission || "", userPermissions);
+    
     return (
       <Link
         key={item.key}
         href={item.key}
+        onClick={(e) => {
+          if (!canAccess) {
+            e.preventDefault();
+            return false;
+          }
+        }}
         className={cn(
           "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition",
           "hover:bg-muted",
           active && "bg-muted text-primary",
-          !active && "text-muted-foreground"
+          !active && "text-muted-foreground",
+          !canAccess && "opacity-50 cursor-not-allowed"
         )}
         style={{ paddingLeft: `${12 + level * 16}px` }}
       >
