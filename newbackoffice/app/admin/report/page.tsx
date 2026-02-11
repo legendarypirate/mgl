@@ -229,11 +229,15 @@ export default function ReportPage() {
           // Calculate base salary from delivered deliveries
           let salary = deliveredCount * pricePerDelivery;
           
-          // Add status 5 amounts to salary: 5k for driver, 7k for others
+          // Add status 5 amounts to salary: 5k for driver, merchant's report_price for merchants
           if (typeToUse === 'driver') {
             salary += status5Count * 5000;
           } else {
-            salary += status5Count * 7000;
+            // Use merchant's report_price from status 5 deliveries (same as status 3)
+            const status5PricePerDelivery = status5GroupDeliveries.length > 0
+              ? (status5GroupDeliveries[0]?.merchant?.report_price || 7000)
+              : pricePerDelivery; // Fallback to status 3 price if no status 5 deliveries
+            salary += status5Count * status5PricePerDelivery;
           }
 
           // Get orders with status 3 for the same group
@@ -275,12 +279,16 @@ export default function ReportPage() {
           
           const status5Count = status5GroupDeliveries.length;
           
-          // Calculate salary for status 5 only groups: 5k for driver, 7k for others
+          // Calculate salary for status 5 only groups: 5k for driver, merchant's report_price for merchants
           let salary = 0;
           if (typeToUse === 'driver') {
             salary = status5Count * 5000;
           } else {
-            salary = status5Count * 7000;
+            // Use merchant's report_price (default 7000)
+            const status5PricePerDelivery = status5GroupDeliveries.length > 0
+              ? (status5GroupDeliveries[0]?.merchant?.report_price || 7000)
+              : 7000;
+            salary = status5Count * status5PricePerDelivery;
           }
           
           // Get orders with status 3 for the same group

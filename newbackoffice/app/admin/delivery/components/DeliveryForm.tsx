@@ -229,9 +229,14 @@ export default function DeliveryForm({
           <Label htmlFor="phone">Утас *</Label>
           <Input
             id="phone"
+            type="tel"
             value={formData.phone}
-            onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, '').slice(0, 8);
+              setFormData((prev) => ({ ...prev, phone: value }));
+            }}
             placeholder="Утасны дугаар"
+            maxLength={8}
             required
           />
         </div>
