@@ -14,6 +14,7 @@ module.exports = app => {
   
     // Retrieve all Tutorials
     router.get("/", delivery.findAll);
+    router.get("/product-report", delivery.findAllForProductReport);
     router.get('/delivery-status-counts', delivery.getStatusCounts);
 
   router.get("/:deliveryId/items", delivery.getItemsByDeliveryId);

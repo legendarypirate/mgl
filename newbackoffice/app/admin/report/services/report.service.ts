@@ -69,6 +69,49 @@ export const fetchReportDeliveries = async (
   }
 };
 
+// Optimized: Fetch deliveries with items for product report (single query, no N+1)
+export const fetchReportDeliveriesWithItems = async (
+  filters: {
+    startDate?: string;
+    endDate?: string;
+    merchantId?: number;
+  }
+): Promise<Delivery[]> => {
+  if (!API_URL) {
+    throw new Error('API URL is not configured. Please set NEXT_PUBLIC_API_URL environment variable.');
+  }
+
+  const params = new URLSearchParams();
+  if (filters.merchantId) params.append('merchant_id', filters.merchantId.toString());
+  if (filters.startDate) params.append('start_date', filters.startDate);
+  if (filters.endDate) params.append('end_date', filters.endDate);
+  // Filter by status 3 (delivered) and status 5 (хаягаар очсон)
+  params.append('status_ids', '3,5');
+
+  const url = `${API_URL}/api/delivery/product-report?${params.toString()}`;
+
+  try {
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    if (result.success) {
+      return result.data || [];
+    }
+    throw new Error(result.message || 'Failed to fetch deliveries');
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Network error: Failed to fetch deliveries. Please check your connection and API server.');
+  }
+};
+
 // Fetch orders with status 3 from orders table
 export const fetchReportOrders = async (
   filters: {

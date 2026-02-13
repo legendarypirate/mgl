@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { fetchReportDeliveries } from '../services/report.service';
+import { fetchReportDeliveriesWithItems } from '../services/report.service';
 import { fetchMerchants } from '../../delivery/services/delivery.service';
 import { User, Delivery, DeliveryItem } from '../../delivery/types/delivery';
 
@@ -101,47 +101,30 @@ export default function ProductReportPage() {
         filters.merchantId = selectedMerchantId;
       }
 
-      // Fetch all delivered deliveries (status 3 or 5)
-      const deliveries = await fetchReportDeliveries(filters);
+      // Fetch all delivered deliveries with items in a single optimized query
+      const deliveries = await fetchReportDeliveriesWithItems(filters);
       
-      // Fetch items for each delivery
+      // Process deliveries and filter by product name if provided
       const deliveriesWithItemsData: DeliveryWithItems[] = [];
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       
       for (const delivery of deliveries) {
-        try {
-          const itemsResponse = await fetch(`${API_URL}/api/delivery/${delivery.id}/items`, {
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token && { Authorization: `Bearer ${token}` }),
-            },
+        // Items are already included in the response from the optimized endpoint
+        const items: DeliveryItem[] = delivery.items || [];
+        
+        // Filter by product name if provided
+        let filteredItems = items;
+        if (productNameFilter.trim()) {
+          filteredItems = items.filter(item => 
+            item.good?.name?.toLowerCase().includes(productNameFilter.toLowerCase())
+          );
+        }
+        
+        // Only add delivery if it has items (or if no product filter is set)
+        if (filteredItems.length > 0 || !productNameFilter.trim()) {
+          deliveriesWithItemsData.push({
+            ...delivery,
+            items: filteredItems,
           });
-
-          if (itemsResponse.ok) {
-            const itemsResult = await itemsResponse.json();
-            if (itemsResult.success && Array.isArray(itemsResult.data)) {
-              const items: DeliveryItem[] = itemsResult.data;
-              
-              // Filter by product name if provided
-              let filteredItems = items;
-              if (productNameFilter.trim()) {
-                filteredItems = items.filter(item => 
-                  item.good?.name?.toLowerCase().includes(productNameFilter.toLowerCase())
-                );
-              }
-              
-              // Only add delivery if it has items (or if no product filter is set)
-              if (filteredItems.length > 0 || !productNameFilter.trim()) {
-                deliveriesWithItemsData.push({
-                  ...delivery,
-                  items: filteredItems,
-                });
-              }
-            }
-          }
-        } catch (error) {
-          console.warn(`Failed to fetch items for delivery ${delivery.id}:`, error);
         }
       }
       

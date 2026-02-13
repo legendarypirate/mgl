@@ -1016,6 +1016,79 @@ exports.deleteAll = (req, res) => {
 
 
 // find all published Categories
+// Optimized endpoint for product reports - fetches deliveries with items in a single query
+exports.findAllForProductReport = async (req, res) => {
+  try {
+    const {
+      merchant_id,
+      status_ids,
+      start_date,
+      end_date,
+    } = req.query;
+
+    // 🧩 Build WHERE clause
+    const where = {
+      [Op.or]: [{ is_deleted: false }, { is_deleted: null }],
+    };
+
+    if (merchant_id) where.merchant_id = merchant_id;
+
+    if (status_ids) {
+      const statusArray = status_ids.split(",").map(Number);
+      if (statusArray.length > 0) where.status = { [Op.in]: statusArray };
+    }
+
+    // 🗓️ Delivery Date Filter
+    if (start_date && end_date) {
+      where.delivery_date = {
+        [Op.between]: [start_date, end_date],
+      };
+    } else if (start_date) {
+      where.delivery_date = { [Op.gte]: start_date };
+    } else if (end_date) {
+      where.delivery_date = { [Op.lte]: end_date };
+    }
+
+    // 🔍 Query database - optimized for product reports
+    // Fetch all deliveries with items in a single query (no pagination limit)
+    const deliveries = await Delivery.findAll({
+      where,
+      include: [
+        { 
+          model: User, 
+          as: "merchant", 
+          attributes: ["id", "username", "report_price"] 
+        },
+        {
+          model: DeliveryItem,
+          as: "items",
+          required: false, // LEFT JOIN to include deliveries even without items
+          include: [
+            {
+              model: Good,
+              as: "good",
+              attributes: ["id", "name"],
+              required: false,
+            },
+          ],
+        },
+      ],
+      order: [["id", "DESC"]],
+    });
+
+    // 🧾 Response
+    res.status(200).json({
+      success: true,
+      data: deliveries.map((d) => d.toJSON()),
+    });
+  } catch (error) {
+    console.error("findAllForProductReport error:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
 exports.findAllPublished = (req, res) => {
   category.findAll({ where: { published: true } })
     .then(data => {
