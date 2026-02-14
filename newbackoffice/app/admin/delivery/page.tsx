@@ -131,6 +131,8 @@ function DeliveryPageContent() {
 
   // Load initial data
   useEffect(() => {
+    document.title = 'Хүргэлт';
+    
     const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
     const storedPermissions =
       typeof window !== 'undefined' ? localStorage.getItem('permissions') : null;

@@ -1,7 +1,11 @@
 module.exports = app => {
     const report = require("../controllers/report.controller.js");
+    const { authenticate } = require("../middleware/auth.middleware");
   
     var router = require("express").Router();
+    
+    // Apply authentication middleware to all routes
+    router.use(authenticate);
     router.get("/:id/deliveries", report.findDeliveriesByReportId);
 
     // Create a new Tutorial

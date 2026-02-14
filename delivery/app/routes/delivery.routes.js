@@ -1,7 +1,11 @@
 module.exports = app => {
     const delivery = require("../controllers/delivery.controller.js");
+    const { authenticate } = require("../middleware/auth.middleware");
   
     var router = require("express").Router();
+    
+    // Apply authentication middleware to all routes
+    router.use(authenticate);
     router.get("/statistic", delivery.statistic);
   router.post("/status", delivery.status);
   router.post("/update-delivery-dates", delivery.updateDeliveryDates);

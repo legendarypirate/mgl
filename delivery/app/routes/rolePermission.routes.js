@@ -1,7 +1,11 @@
 module.exports = app => {
     const rolePermission = require("../controllers/role_permission.controller.js");
+    const { authenticate } = require("../middleware/auth.middleware");
   
     var router = require("express").Router();
+    
+    // Apply authentication middleware to all routes
+    router.use(authenticate);
   
     // Create a new role_permission (assign permission to a role)
     router.get('/:roleId', rolePermission.getByRoleId);

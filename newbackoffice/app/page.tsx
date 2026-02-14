@@ -43,6 +43,12 @@ export default function LandingPage() {
         localStorage.setItem("role", user.role?.toString() ?? "");
         localStorage.setItem("username", user.username || "");
 
+        // Set cookie for server-side middleware authentication
+        // Cookie expires in 30 minutes (same as JWT token)
+        const expires = new Date();
+        expires.setMinutes(expires.getMinutes() + 30);
+        document.cookie = `token=${token}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+
         setMessageType("success");
         setMessage("Амжилттай нэвтэрлээ");
 

@@ -141,6 +141,10 @@ const priorities = [
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState(initialNotifications);
+
+  useEffect(() => {
+    document.title = 'Мэдэгдэл';
+  }, []);
   const [showSendForm, setShowSendForm] = useState(false);
   const [loading, setLoading] = useState(false);
   

@@ -44,8 +44,16 @@ export function Navbar() {
 
   const handleLogout = () => {
     toast.success("Амжилттай гарлаа");
+    // Clear all localStorage items
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    localStorage.removeItem("permissions");
+    localStorage.removeItem("role");
+    localStorage.removeItem("username");
+    
+    // Clear authentication cookie
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax";
+    
     setLogoutOpen(false);
     router.push("/");
   };

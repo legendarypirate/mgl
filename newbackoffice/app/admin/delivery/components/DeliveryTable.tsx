@@ -2,6 +2,12 @@
 
 import React from 'react';
 import { Delivery, DeliveryItem } from '../types/delivery';
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  createColumnHelper,
+} from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +30,8 @@ interface DeliveryTableProps {
   isMerchant?: boolean;
 }
 
+const columnHelper = createColumnHelper<Delivery>();
+
 export default function DeliveryTable({
   deliveries,
   loading = false,
@@ -42,6 +50,106 @@ export default function DeliveryTable({
   const isRowExpanded = (id: number) => expandedRowKeys.includes(id);
   const allSelected = deliveries.length > 0 && selectedRowKeys.length === deliveries.length;
   const someSelected = selectedRowKeys.length > 0 && selectedRowKeys.length < deliveries.length;
+
+  const columns = React.useMemo(
+    () => [
+      columnHelper.display({
+        id: 'select',
+        header: '',
+        size: 48,
+      }),
+      columnHelper.accessor('delivery_date', {
+        header: 'Хүргэх огноо',
+        cell: (info) => {
+          const delivery = info.row.original;
+          return delivery.delivery_date
+            ? format(new Date(delivery.delivery_date), 'yyyy-MM-dd')
+            : delivery.createdAt
+            ? format(new Date(delivery.createdAt), 'yyyy-MM-dd')
+            : '-';
+        },
+      }),
+      ...(!isMerchant
+        ? [
+            columnHelper.accessor('merchant', {
+              header: 'Мерчанд нэр',
+              cell: (info) => info.getValue()?.username || '-',
+            }),
+          ]
+        : []),
+      columnHelper.display({
+        id: 'items',
+        header: 'Бараа',
+      }),
+      columnHelper.display({
+        id: 'quantity',
+        header: 'Тоо',
+      }),
+      columnHelper.accessor('phone', {
+        header: 'Утас',
+      }),
+      columnHelper.accessor('address', {
+        header: 'Хаяг',
+        cell: (info) => (
+          <div className="text-base text-gray-700 whitespace-normal break-words">
+            {info.getValue()}
+          </div>
+        ),
+      }),
+      columnHelper.accessor('status_name', {
+        header: 'Төлөв',
+        cell: (info) => {
+          const status = info.getValue();
+          return (
+            <Badge
+              style={{
+                backgroundColor: status.color,
+                color: 'white',
+              }}
+            >
+              {status.status}
+            </Badge>
+          );
+        },
+      }),
+      columnHelper.accessor('price', {
+        header: 'Үнэ',
+        cell: (info) => info.getValue()?.toLocaleString() || 0,
+      }),
+      columnHelper.accessor('driver_comment', {
+        header: 'Ж/тайлбар',
+        cell: (info) => (
+          <div className="text-xs whitespace-normal break-words">
+            {info.getValue() || 'Тайлбаргүй'}
+          </div>
+        ),
+      }),
+      ...(!isMerchant
+        ? [
+            columnHelper.accessor('driver', {
+              header: 'Жолооч нэр',
+              cell: (info) => info.getValue()?.username || '-',
+            }),
+            columnHelper.display({
+              id: 'actions',
+              header: 'Үйлдэл',
+            }),
+          ]
+        : [
+            columnHelper.display({
+              id: 'image',
+              header: 'Зураг',
+            }),
+          ]),
+    ],
+    [isMerchant]
+  );
+
+  const table = useReactTable({
+    data: deliveries,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -118,31 +226,32 @@ export default function DeliveryTable({
       <div className="border rounded-md">
         <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-12">
-              <input
-                type="checkbox"
-                checked={allSelected}
-                ref={(input) => {
-                  if (input) input.indeterminate = someSelected;
-                }}
-                onChange={(e) => handleSelectAll(e.target.checked)}
-                className="rounded"
-              />
-            </TableHead>
-            <TableHead>Хүргэх огноо</TableHead>
-            {!isMerchant && <TableHead>Мерчанд нэр</TableHead>}
-            <TableHead>Бараа</TableHead>
-            <TableHead>Тоо</TableHead>
-            <TableHead>Утас</TableHead>
-            <TableHead>Хаяг</TableHead>
-            <TableHead>Төлөв</TableHead>
-            <TableHead>Үнэ</TableHead>
-            <TableHead>Ж/тайлбар</TableHead>
-            {!isMerchant && <TableHead>Жолооч нэр</TableHead>}
-            {!isMerchant && <TableHead>Үйлдэл</TableHead>}
-            {isMerchant && <TableHead>Зураг</TableHead>}
-          </TableRow>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead 
+                  key={header.id}
+                  className={header.id === 'select' ? 'w-12' : ''}
+                >
+                  {header.id === 'select' ? (
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(input) => {
+                        if (input) input.indeterminate = someSelected;
+                      }}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="rounded"
+                    />
+                  ) : (
+                    header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())
+                  )}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
         </TableHeader>
         <TableBody>
           {deliveries.length === 0 ? (

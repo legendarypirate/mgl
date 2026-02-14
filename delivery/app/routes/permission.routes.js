@@ -1,7 +1,11 @@
 module.exports = app => {
     const permission = require("../controllers/permission.controller.js");
+    const { authenticate } = require("../middleware/auth.middleware");
   
     var router = require("express").Router();
+    
+    // Apply authentication middleware to all routes
+    router.use(authenticate);
   
     // Create a new permission
     router.post("/", permission.create);

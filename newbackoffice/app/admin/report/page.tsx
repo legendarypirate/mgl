@@ -30,6 +30,11 @@ import { ReportRow, ReportType } from './types/report';
 export default function ReportPage() {
   // State
   const [loading, setLoading] = useState(false);
+
+  // Set page title
+  useEffect(() => {
+    document.title = 'Тайлан';
+  }, []);
   const [reportData, setReportData] = useState<ReportRow[]>([]);
 
   // User info

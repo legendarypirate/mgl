@@ -27,6 +27,16 @@ function getUserPermissions(): string[] {
   }
 }
 
+function isAuthenticated(): boolean {
+  try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
+    const userStr = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
+    return !!(token && userStr);
+  } catch (e) {
+    return false;
+  }
+}
+
 function hasAccessToPath(
   pathname: string,
   menuItems: MenuItemType[],
@@ -138,8 +148,8 @@ export default function AdminLayout({
       return; // Re-run effect with updated permissions
     }
 
-    // Block unauthenticated users
-    if (freshPermissions.length === 0 && pathname.startsWith("/admin")) {
+    // Block unauthenticated users - check for token and user, not just permissions
+    if (!isAuthenticated() && pathname.startsWith("/admin")) {
       toast.error("Та эхлээд нэвтэрнэ үү!");
       router.push("/");
       return;

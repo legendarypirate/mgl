@@ -1,7 +1,11 @@
 module.exports = app => {
     const good = require("../controllers/good.controller.js");
+    const { authenticate } = require("../middleware/auth.middleware");
   
     var router = require("express").Router();
+    
+    // Apply authentication middleware to all routes
+    router.use(authenticate);
 
     router.patch("/:id/stock", good.updateStock);
     router.get("/:id/history", good.getHistory);

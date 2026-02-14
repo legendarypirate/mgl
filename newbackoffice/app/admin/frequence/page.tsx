@@ -24,6 +24,10 @@ interface Task {
 
 export default function TaskCalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    document.title = 'Ажлын календар';
+  }, []);
   const [calendarTasks, setCalendarTasks] = useState<Task[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(false);

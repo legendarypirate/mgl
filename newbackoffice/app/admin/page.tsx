@@ -15,6 +15,8 @@ export default function AdminHome() {
   const [merchantId, setMerchantId] = useState<number | null>(null);
 
   useEffect(() => {
+    document.title = 'Хүргэлтийн төлөвийн хяналтын самбар';
+    
     const loadData = async () => {
       try {
         // Get user data from localStorage

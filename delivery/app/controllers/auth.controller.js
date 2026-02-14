@@ -160,7 +160,17 @@ exports.mobile_login = async (req, res) => {
 };
 // Verify the JWT token
 exports.verifyToken = (req, res, next) => {
-  const token = req.headers["authorization"];
+  // Get token from Authorization header (supports both "Bearer token" and "token" formats)
+  const authHeader = req.headers["authorization"];
+  
+  if (!authHeader) {
+    return res.status(401).json({ message: "Token is missing!" });
+  }
+
+  // Extract token (handle both "Bearer token" and just "token" formats)
+  const token = authHeader.startsWith("Bearer ") 
+    ? authHeader.slice(7) 
+    : authHeader;
 
   if (!token) {
     return res.status(401).json({ message: "Token is missing!" });

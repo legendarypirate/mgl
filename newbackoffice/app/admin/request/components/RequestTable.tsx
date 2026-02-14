@@ -2,6 +2,12 @@
 
 import React from 'react';
 import { User } from '../types/request';
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  createColumnHelper,
+} from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
@@ -20,6 +26,8 @@ interface RequestTableProps {
   onPaginationChange: (page: number, pageSize: number) => void;
 }
 
+const columnHelper = createColumnHelper<User>();
+
 export default function RequestTable({
   users,
   loading = false,
@@ -36,6 +44,77 @@ export default function RequestTable({
     };
     return roles[roleId] || `Role ${roleId}`;
   };
+
+  const columns = React.useMemo(
+    () => [
+      columnHelper.accessor('username', {
+        header: 'Username',
+      }),
+      columnHelper.accessor('email', {
+        header: 'Email',
+      }),
+      columnHelper.accessor('phone', {
+        header: 'Phone',
+      }),
+      columnHelper.accessor('bank', {
+        header: 'Bank',
+        cell: (info) => info.getValue() || '-',
+      }),
+      columnHelper.accessor('account_number', {
+        header: 'Account Number',
+        cell: (info) => info.getValue() || '-',
+      }),
+      columnHelper.accessor('contact_info', {
+        header: 'Contact Info',
+        cell: (info) => info.getValue() || '-',
+      }),
+      columnHelper.accessor('address', {
+        header: 'Address',
+        cell: (info) => (
+          <span className="max-w-xs truncate">{info.getValue() || '-'}</span>
+        ),
+      }),
+      columnHelper.accessor('role_id', {
+        header: 'Role',
+        cell: (info) => getRoleName(info.getValue()),
+      }),
+      columnHelper.display({
+        id: 'actions',
+        header: 'Actions',
+        cell: (info) => (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEdit(info.row.original)}
+              title="Утасны дугаар засах"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(info.row.original)}
+              title="Устгах"
+            >
+              <Trash2 className="h-4 w-4 text-red-500" />
+            </Button>
+          </div>
+        ),
+      }),
+    ],
+    [onEdit, onDelete]
+  );
+
+  const startIndex = (pagination.current - 1) * pagination.pageSize;
+  const endIndex = startIndex + pagination.pageSize;
+  const currentPageData = users.slice(startIndex, endIndex);
+
+  const table = useReactTable({
+    data: currentPageData,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   if (loading) {
     return (
@@ -92,64 +171,37 @@ export default function RequestTable({
     );
   }
 
-  const startIndex = (pagination.current - 1) * pagination.pageSize;
-  const endIndex = startIndex + pagination.pageSize;
-  const currentPageData = users.slice(startIndex, endIndex);
-
   return (
     <div className="border rounded-md">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Username</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Phone</TableHead>
-            <TableHead>Bank</TableHead>
-            <TableHead>Account Number</TableHead>
-            <TableHead>Contact Info</TableHead>
-            <TableHead>Address</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id}>
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(header.column.columnDef.header, header.getContext())}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
         </TableHeader>
         <TableBody>
-          {currentPageData.length === 0 ? (
+          {table.getRowModel().rows.length === 0 ? (
             <TableRow>
               <TableCell colSpan={9} className="text-center text-gray-400 py-8">
                 Хэрэглэгч олдсонгүй
               </TableCell>
             </TableRow>
           ) : (
-            currentPageData.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.phone}</TableCell>
-                <TableCell>{user.bank || '-'}</TableCell>
-                <TableCell>{user.account_number || '-'}</TableCell>
-                <TableCell>{user.contact_info || '-'}</TableCell>
-                <TableCell className="max-w-xs truncate">{user.address || '-'}</TableCell>
-                <TableCell>{getRoleName(user.role_id)}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEdit(user)}
-                      title="Утасны дугаар засах"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(user)}
-                      title="Устгах"
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                </TableCell>
+            table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
               </TableRow>
             ))
           )}
@@ -186,4 +238,3 @@ export default function RequestTable({
     </div>
   );
 }
-

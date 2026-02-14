@@ -951,6 +951,7 @@ export default function TaskManagementPage() {
 
   // Fetch data on component mount
   useEffect(() => {
+    document.title = 'Үүрэг даалгаврын систем';
     fetchData();
   }, []);
 

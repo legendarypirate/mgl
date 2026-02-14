@@ -1,7 +1,11 @@
 module.exports = app => {
     const summary = require("../controllers/summary.controller.js");
+    const { authenticate } = require("../middleware/auth.middleware");
   
     const router = require("express").Router();
+    
+    // Apply authentication middleware to all routes
+    router.use(authenticate);
   
     // Create a new Summary
     router.post("/", summary.create);

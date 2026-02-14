@@ -184,6 +184,8 @@ export default function CategoriesPage() {
 
   // Seed static data
   useEffect(() => {
+    document.title = 'Ангилал';
+    
     const seed: Category[] = [
       { id: 1, name: "Electronics", parent_id: null },
       { id: 2, name: "Computers", parent_id: 1 },

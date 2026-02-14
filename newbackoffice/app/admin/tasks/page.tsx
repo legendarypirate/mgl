@@ -255,6 +255,10 @@ function CreateTaskDrawer({
 
 export default function KanbanPage() {
   const [columnTasks, setColumnTasks] = useState<Record<string, Task[]>>({});
+
+  useEffect(() => {
+    document.title = 'Үүрэг даалгаврын самбар';
+  }, []);
   const [supervisors, setSupervisors] = useState<User[]>([]);
   const [loadingSupervisors, setLoadingSupervisors] = useState(true);
   const [activeTask, setActiveTask] = useState<Task | null>(null);

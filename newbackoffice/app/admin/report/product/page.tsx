@@ -27,6 +27,11 @@ interface DeliveryWithItems extends Delivery {
 export default function ProductReportPage() {
   // State
   const [loading, setLoading] = useState(false);
+
+  // Set page title
+  useEffect(() => {
+    document.title = 'Барааны тайлан';
+  }, []);
   const [deliveriesWithItems, setDeliveriesWithItems] = useState<DeliveryWithItems[]>([]);
 
   // User info

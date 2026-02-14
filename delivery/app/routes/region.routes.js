@@ -1,7 +1,11 @@
 module.exports = app => {
     const region = require("../controllers/region.controller.js");
+    const { authenticate } = require("../middleware/auth.middleware");
   
     var router = require("express").Router();
+    
+    // Apply authentication middleware to all routes
+    router.use(authenticate);
   
     // Create a new Tutorial
     router.post("/", region.create);
