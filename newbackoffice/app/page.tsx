@@ -45,9 +45,11 @@ export default function LandingPage() {
 
         // Set cookie for server-side middleware authentication
         // Cookie expires in 30 minutes (same as JWT token)
+        // Using Secure and SameSite=Strict for better security (adjust based on your deployment)
         const expires = new Date();
         expires.setMinutes(expires.getMinutes() + 30);
-        document.cookie = `token=${token}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+        const isSecure = window.location.protocol === 'https:';
+        document.cookie = `token=${token}; expires=${expires.toUTCString()}; path=/; SameSite=Strict${isSecure ? '; Secure' : ''}`;
 
         setMessageType("success");
         setMessage("Амжилттай нэвтэрлээ");

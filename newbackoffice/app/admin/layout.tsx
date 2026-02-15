@@ -149,7 +149,16 @@ export default function AdminLayout({
     }
 
     // Block unauthenticated users - check for token and user, not just permissions
+    // This is a client-side fallback - the middleware should have already blocked unauthenticated users
+    // But we check here as well to prevent rendering sensitive content if someone bypasses middleware
     if (!isAuthenticated() && pathname.startsWith("/admin")) {
+      // Clear any stale data
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("permissions");
+      localStorage.removeItem("role");
+      localStorage.removeItem("username");
+      
       toast.error("Та эхлээд нэвтэрнэ үү!");
       router.push("/");
       return;

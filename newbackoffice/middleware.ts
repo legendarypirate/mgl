@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
 
-export function middleware(request: NextRequest) {
+// JWT secret key - should match the backend secret key
+// TODO: Move this to environment variable for better security
+const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Protect all /admin routes
@@ -16,8 +21,29 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
     
-    // Token exists, allow request to proceed
-    // Backend will verify the token validity on API calls
+    // Validate the JWT token server-side using jose (Edge-compatible)
+    try {
+      const secret = new TextEncoder().encode(JWT_SECRET);
+      const { payload } = await jwtVerify(token, secret);
+      
+      // Token is valid, check if it has required fields
+      if (!payload || !payload.id) {
+        throw new Error('Invalid token payload');
+      }
+      
+      // Token is valid, allow request to proceed
+    } catch (error) {
+      // Token is invalid, expired, or malformed
+      // Clear the invalid token cookie and redirect to login
+      const loginUrl = new URL('/', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      
+      const response = NextResponse.redirect(loginUrl);
+      // Clear the invalid token cookie
+      response.cookies.delete('token');
+      
+      return response;
+    }
   }
   
   return NextResponse.next();
