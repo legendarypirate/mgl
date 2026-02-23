@@ -1,11 +1,11 @@
 module.exports = app => {
     const request = require("../controllers/request.controller.js");
-    const { authenticate } = require("../middleware/auth.middleware");
+    // const { authenticate } = require("../middleware/auth.middleware");
   
     var router = require("express").Router();
     
     // Apply authentication middleware to all routes
-    router.use(authenticate);
+    // router.use(authenticate);
     router.post("/stock", request.createRequest);
 
     // Create a new Request
