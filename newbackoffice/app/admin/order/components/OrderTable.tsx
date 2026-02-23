@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus } from '../types/order';
 import {
   useReactTable,
@@ -14,6 +14,50 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { decryptData } from '@/lib/security/encryption';
+
+// Component to decrypt and display phone/address
+function DecryptedField({ value, fallback = '-' }: { value: string | null | undefined; fallback?: string }) {
+  const [decryptedValue, setDecryptedValue] = useState<string>(value || fallback);
+  const [isDecrypting, setIsDecrypting] = useState(false);
+
+  useEffect(() => {
+    const decryptField = async () => {
+      if (!value || value === fallback) {
+        setDecryptedValue(fallback);
+        return;
+      }
+
+      // Check if value looks encrypted (contains colons, typical of encrypted format)
+      const looksEncrypted = value.includes(':') && value.split(':').length >= 2;
+      
+      if (looksEncrypted) {
+        setIsDecrypting(true);
+        try {
+          const decrypted = await decryptData(value);
+          setDecryptedValue(decrypted);
+        } catch (error) {
+          // If decryption fails, it might not be encrypted - use original value
+          console.debug('Decryption failed, using original value:', error);
+          setDecryptedValue(value);
+        } finally {
+          setIsDecrypting(false);
+        }
+      } else {
+        // Not encrypted, use as-is
+        setDecryptedValue(value);
+      }
+    };
+
+    decryptField();
+  }, [value, fallback]);
+
+  if (isDecrypting) {
+    return <span className="text-gray-400">...</span>;
+  }
+
+  return <span>{decryptedValue}</span>;
+}
 
 interface OrderTableProps {
   orders: Order[];
@@ -90,9 +134,17 @@ export default function OrderTable({
         : []),
       columnHelper.accessor('phone', {
         header: 'Утас',
+        cell: (info) => {
+          const value = info.getValue();
+          return <DecryptedField value={value} />;
+        },
       }),
       columnHelper.accessor('address', {
         header: 'Хаяг',
+        cell: (info) => {
+          const value = info.getValue();
+          return <DecryptedField value={value} />;
+        },
       }),
       columnHelper.accessor('status', {
         header: 'Төлөв',

@@ -47,6 +47,7 @@ db.histories = require("./history.model.js")(sequelize, Sequelize);
 db.good_histories = require("./good_history.model.js")(sequelize, Sequelize);
 
 db.role_permissions = require("./role_permission.model.js")(sequelize, Sequelize);
+db.refreshTokens = require("./refreshToken.model.js")(sequelize, Sequelize);
 
 db.histories.belongsTo(db.users, {
   foreignKey: 'driver_id',
@@ -287,5 +288,15 @@ db.deliveries.belongsTo(db.users, {
   as: 'driver', // this allows delivery.driver to access the User (driver) info
 });
 
+// RefreshToken associations
+db.users.hasMany(db.refreshTokens, {
+  foreignKey: 'userId',
+  as: 'refreshTokens'
+});
+
+db.refreshTokens.belongsTo(db.users, {
+  foreignKey: 'userId',
+  as: 'user'
+});
 
 module.exports = db;

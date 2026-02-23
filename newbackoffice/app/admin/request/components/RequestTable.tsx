@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from '../types/request';
 import {
   useReactTable,
@@ -12,6 +12,50 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { decryptData } from '@/lib/security/encryption';
+
+// Component to decrypt and display phone/address
+function DecryptedField({ value, fallback = '-' }: { value: string | null | undefined; fallback?: string }) {
+  const [decryptedValue, setDecryptedValue] = useState<string>(value || fallback);
+  const [isDecrypting, setIsDecrypting] = useState(false);
+
+  useEffect(() => {
+    const decryptField = async () => {
+      if (!value || value === fallback) {
+        setDecryptedValue(fallback);
+        return;
+      }
+
+      // Check if value looks encrypted (contains colons, typical of encrypted format)
+      const looksEncrypted = value.includes(':') && value.split(':').length >= 2;
+      
+      if (looksEncrypted) {
+        setIsDecrypting(true);
+        try {
+          const decrypted = await decryptData(value);
+          setDecryptedValue(decrypted);
+        } catch (error) {
+          // If decryption fails, it might not be encrypted - use original value
+          console.debug('Decryption failed, using original value:', error);
+          setDecryptedValue(value);
+        } finally {
+          setIsDecrypting(false);
+        }
+      } else {
+        // Not encrypted, use as-is
+        setDecryptedValue(value);
+      }
+    };
+
+    decryptField();
+  }, [value, fallback]);
+
+  if (isDecrypting) {
+    return <span className="text-gray-400">...</span>;
+  }
+
+  return <span>{decryptedValue}</span>;
+}
 
 interface RequestTableProps {
   users: User[];
@@ -55,6 +99,10 @@ export default function RequestTable({
       }),
       columnHelper.accessor('phone', {
         header: 'Phone',
+        cell: (info) => {
+          const value = info.getValue();
+          return <DecryptedField value={value} />;
+        },
       }),
       columnHelper.accessor('bank', {
         header: 'Bank',
@@ -70,9 +118,14 @@ export default function RequestTable({
       }),
       columnHelper.accessor('address', {
         header: 'Address',
-        cell: (info) => (
-          <span className="max-w-xs truncate">{info.getValue() || '-'}</span>
-        ),
+        cell: (info) => {
+          const value = info.getValue();
+          return (
+            <span className="max-w-xs truncate">
+              <DecryptedField value={value} />
+            </span>
+          );
+        },
       }),
       columnHelper.accessor('role_id', {
         header: 'Role',

@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Delivery, DeliveryItem } from '../types/delivery';
 import {
   useReactTable,
@@ -15,6 +15,7 @@ import { Edit, Eye, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { decryptData } from '@/lib/security/encryption';
 
 interface DeliveryTableProps {
   deliveries: Delivery[];
@@ -31,6 +32,55 @@ interface DeliveryTableProps {
 }
 
 const columnHelper = createColumnHelper<Delivery>();
+
+// Component to display phone/address (plain text - no decryption needed)
+// Phone and address are now sent as plain text (not encrypted)
+function DecryptedField({ value, fallback = '-' }: { value: string | null | undefined; fallback?: string }) {
+  // Phone and address are now plain text - no decryption needed
+  // If you still see hashed/encrypted data, it means:
+  // 1. Old encrypted data in database (needs migration)
+  // 2. Backend is still encrypting (should be fixed)
+  
+  if (!value || value === fallback) {
+    return <span>{fallback}</span>;
+  }
+
+  // Check if value looks encrypted (has colons in format: iv:authTag:encrypted)
+  // This should NOT happen anymore - phone/address should be plain text
+  const looksEncrypted = value.includes(':') && value.split(':').length === 3 && value.length > 50;
+  
+  if (looksEncrypted) {
+    // Legacy: Try to decrypt if it looks encrypted (for old data)
+    console.warn('Phone/address appears encrypted - trying to decrypt. This should not happen with new data.');
+    const [decryptedValue, setDecryptedValue] = useState<string>(value);
+    const [isDecrypting, setIsDecrypting] = useState(false);
+
+    useEffect(() => {
+      const decryptField = async () => {
+        setIsDecrypting(true);
+        try {
+          const decrypted = await decryptData(value);
+          setDecryptedValue(decrypted);
+        } catch (error) {
+          // If decryption fails, show error message
+          console.error('Failed to decrypt phone/address:', error);
+          setDecryptedValue('(Decryption failed)');
+        } finally {
+          setIsDecrypting(false);
+        }
+      };
+      decryptField();
+    }, [value]);
+
+    if (isDecrypting) {
+      return <span className="text-gray-400">...</span>;
+    }
+    return <span>{decryptedValue}</span>;
+  }
+
+  // Normal case: plain text data (expected)
+  return <span>{value}</span>;
+}
 
 export default function DeliveryTable({
   deliveries,
@@ -87,12 +137,17 @@ export default function DeliveryTable({
       }),
       columnHelper.accessor('phone', {
         header: 'Утас',
+        cell: (info) => (
+          <div className="font-medium">
+            <DecryptedField value={info.getValue()} />
+          </div>
+        ),
       }),
       columnHelper.accessor('address', {
         header: 'Хаяг',
         cell: (info) => (
           <div className="text-base text-gray-700 whitespace-normal break-words">
-            {info.getValue()}
+            <DecryptedField value={info.getValue()} />
           </div>
         ),
       }),
@@ -320,13 +375,15 @@ export default function DeliveryTable({
                         {itemIndex === 0 && (
                           <>
                             <TableCell rowSpan={items.length}>
-                              <div className="font-medium">{delivery.phone}</div>
+                              <div className="font-medium">
+                                <DecryptedField value={delivery.phone} />
+                              </div>
                             </TableCell>
                             <TableCell rowSpan={items.length} className="max-w-xs">
                               <div 
                                 className="text-base text-gray-700 whitespace-normal break-words"
                               >
-                                {delivery.address}
+                                <DecryptedField value={delivery.address} />
                               </div>
                             </TableCell>
                             <TableCell rowSpan={items.length}>
@@ -454,13 +511,15 @@ export default function DeliveryTable({
                         <div className="text-sm">-</div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium">{delivery.phone}</div>
+                        <div className="font-medium">
+                          <DecryptedField value={delivery.phone} />
+                        </div>
                       </TableCell>
                       <TableCell className="max-w-xs">
                         <div 
                           className="text-base text-gray-700 whitespace-normal break-words"
                         >
-                          {delivery.address}
+                          <DecryptedField value={delivery.address} />
                         </div>
                       </TableCell>
                       <TableCell>

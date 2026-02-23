@@ -23,20 +23,56 @@ export default function LandingPage() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+      // Use secure API route that encrypts credentials
+      // This goes through Next.js API route which proxies to backend
+      console.log('Making login request...'); // Debug log
+      
+      const response = await fetch('/api/secure/auth/login', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include', // Important for cookies
         body: JSON.stringify({ username, password }),
       });
 
+      console.log('Login response status:', response.status); // Debug log
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Network error' }));
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+
       const data = await response.json();
+      console.log('Login response data:', data); // Debug log
 
       if (!response.ok || !data.success) {
         setMessageType("error");
         setMessage(data.message || "Нэвтрэхэд алдаа гарлаа");
       } else {
         // Store all relevant info
-        const { token, user } = data;
+        // Note: Secure auth returns 'accessToken', not 'token'
+        const token = data.accessToken || data.token; // Support both formats
+        const user = data.user;
+        
+        if (!token || !user) {
+          setMessageType("error");
+          setMessage("Invalid response from server");
+          setLoading(false);
+          return;
+        }
+        
+        // Try to use secure storage if available, otherwise use localStorage
+        try {
+          const { setSecureItem } = await import('@/lib/security/secure-storage');
+          await setSecureItem("token", token);
+          await setSecureItem("user", user);
+          await setSecureItem("permissions", user.permissions || []);
+          await setSecureItem("role", user.role?.toString() ?? "");
+          await setSecureItem("username", user.username || "");
+        } catch (e) {
+          console.warn('Secure storage not available, using localStorage:', e);
+        }
+
+        // Also set in regular localStorage for backward compatibility (will be migrated)
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("permissions", JSON.stringify(user.permissions || []));

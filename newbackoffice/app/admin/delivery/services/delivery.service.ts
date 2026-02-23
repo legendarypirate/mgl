@@ -10,40 +10,29 @@ import {
   DeliveryItem,
   Region,
 } from '../types/delivery';
+import { secureGet, securePost, securePut, secureDelete } from '@/lib/security/secure-api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
-
-// Helper function to get auth token
-const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-};
-
-// Fetch deliveries with filters
+// Fetch deliveries with filters (sensitive data automatically encrypted/decrypted)
 export const fetchDeliveries = async (
   filters: DeliveryFilters,
   pagination: { current: number; pageSize: number }
 ): Promise<{ data: Delivery[]; pagination: DeliveryPagination }> => {
-  let url = `${API_URL}/api/delivery?page=${pagination.current}&limit=${pagination.pageSize}`;
+  let queryParams = `?page=${pagination.current}&limit=${pagination.pageSize}`;
 
-  if (filters.merchantId) url += `&merchant_id=${filters.merchantId}`;
-  if (filters.driverId) url += `&driver_id=${filters.driverId}`;
-  if (filters.districtId) url += `&dist_id=${filters.districtId}`;
-  if (filters.phone) url += `&phone=${filters.phone}`;
+  if (filters.merchantId) queryParams += `&merchant_id=${filters.merchantId}`;
+  if (filters.driverId) queryParams += `&driver_id=${filters.driverId}`;
+  if (filters.districtId) queryParams += `&dist_id=${filters.districtId}`;
+  if (filters.phone) queryParams += `&phone=${filters.phone}`;
   if (filters.statusIds && filters.statusIds.length > 0) {
-    url += `&status_ids=${filters.statusIds.join(',')}`;
+    queryParams += `&status_ids=${filters.statusIds.join(',')}`;
   }
-  if (filters.startDate) url += `&start_date=${filters.startDate}`;
-  if (filters.endDate) url += `&end_date=${filters.endDate}`;
+  if (filters.startDate) queryParams += `&start_date=${filters.startDate}`;
+  if (filters.endDate) queryParams += `&end_date=${filters.endDate}`;
 
-  const response = await fetch(url, {
-    headers: getAuthHeaders(),
-  });
+  const result = await secureGet<{ success: boolean; data: Delivery[]; pagination: DeliveryPagination; message?: string }>(
+    `/delivery${queryParams}`
+  );
 
-  const result = await response.json();
   if (result.success) {
     return {
       data: result.data,
@@ -55,61 +44,45 @@ export const fetchDeliveries = async (
 
 // Fetch delivery items
 export const fetchDeliveryItems = async (deliveryId: number): Promise<DeliveryItem[]> => {
-  const response = await fetch(`${API_URL}/api/delivery/${deliveryId}/items`, {
-    headers: getAuthHeaders(),
-  });
+  const result = await secureGet<{ success: boolean; data: DeliveryItem[]; message?: string }>(
+    `/delivery/${deliveryId}/items`
+  );
 
-  if (!response.ok) {
-    throw new Error(`Error fetching items: ${response.statusText}`);
+  if (result.success && Array.isArray(result.data)) {
+    return result.data;
   }
-
-  const data = await response.json();
-  if (data.success && Array.isArray(data.data)) {
-    return data.data;
-  }
-  throw new Error('Invalid data format received');
+  throw new Error(result.message || 'Invalid data format received');
 };
 
 // Fetch delivery history
 export const fetchDeliveryHistory = async (deliveryId: number): Promise<DeliveryHistory[]> => {
-  const response = await fetch(`${API_URL}/api/delivery/${deliveryId}/history`, {
-    headers: getAuthHeaders(),
-  });
+  const result = await secureGet<{ success: boolean; data: DeliveryHistory[]; message?: string }>(
+    `/delivery/${deliveryId}/history`
+  );
 
-  const result = await response.json();
   if (result.success) {
     return result.data;
   }
   throw new Error(result.message || 'Failed to load delivery history');
 };
 
-// Create delivery
+// Create delivery (sensitive fields automatically encrypted)
 export const createDelivery = async (payload: CreateDeliveryPayload): Promise<Delivery> => {
-  const response = await fetch(`${API_URL}/api/delivery`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
-
-  const result = await response.json();
+  const result = await securePost<{ success: boolean; data: Delivery; message?: string }>('/delivery', payload);
+  
   if (result.success) {
     return result.data;
   }
   throw new Error(result.message || 'Failed to create delivery');
 };
 
-// Update delivery
+// Update delivery (sensitive fields automatically encrypted)
 export const updateDelivery = async (
   deliveryId: number,
   payload: UpdateDeliveryPayload
 ): Promise<Delivery> => {
-  const response = await fetch(`${API_URL}/api/delivery/${deliveryId}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
-
-  const result = await response.json();
+  const result = await securePut<{ success: boolean; data: Delivery; message?: string }>(`/delivery/${deliveryId}`, payload);
+  
   if (result.success) {
     return result.data;
   }
@@ -118,30 +91,20 @@ export const updateDelivery = async (
 
 // Delete multiple deliveries
 export const deleteDeliveries = async (ids: React.Key[]): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/delivery/delete-multiple`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ ids }),
-  });
+  const result = await securePost<{ success: boolean; message?: string }>('/delivery/delete-multiple', { ids });
 
-  if (!response.ok) {
-    const result = await response.json();
+  if (!result.success) {
     throw new Error(result.message || 'Failed to delete deliveries');
   }
 };
 
 // Allocate deliveries to driver
 export const allocateDeliveries = async (driverId: number, deliveryIds: React.Key[]): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/delivery/allocate`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({
-      driver_id: driverId,
-      delivery_ids: deliveryIds,
-    }),
+  const result = await securePost<{ success: boolean; message?: string }>('/delivery/allocate', {
+    driver_id: driverId,
+    delivery_ids: deliveryIds,
   });
 
-  const result = await response.json();
   if (!result.success) {
     throw new Error(result.message || 'Failed to allocate deliveries');
   }
@@ -152,16 +115,11 @@ export const changeDeliveryStatus = async (
   statusId: number,
   deliveryIds: React.Key[]
 ): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/delivery/status`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({
-      status_id: statusId,
-      delivery_ids: deliveryIds,
-    }),
+  const result = await securePost<{ success: boolean; message?: string }>('/delivery/status', {
+    status_id: statusId,
+    delivery_ids: deliveryIds,
   });
 
-  const result = await response.json();
   if (!result.success) {
     throw new Error(result.message || 'Failed to change delivery status');
   }
@@ -172,16 +130,11 @@ export const updateDeliveryDates = async (
   deliveryDate: string,
   deliveryIds: React.Key[]
 ): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/delivery/update-delivery-dates`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({
-      delivery_date: deliveryDate,
-      delivery_ids: deliveryIds,
-    }),
+  const result = await securePost<{ success: boolean; message?: string }>('/delivery/update-delivery-dates', {
+    delivery_date: deliveryDate,
+    delivery_ids: deliveryIds,
   });
 
-  const result = await response.json();
   if (!result.success) {
     throw new Error(result.message || 'Failed to update delivery dates');
   }
@@ -189,63 +142,48 @@ export const updateDeliveryDates = async (
 
 // Fetch merchants
 export const fetchMerchants = async (): Promise<User[]> => {
-  const response = await fetch(`${API_URL}/api/user/merchant`, {
-    headers: getAuthHeaders(),
-  });
-
-  const result = await response.json();
+  const result = await secureGet<{ success: boolean; data: User[]; message?: string }>('/user/merchant');
+  
   if (result.success) {
     return result.data;
   }
-  throw new Error('Failed to fetch merchants');
+  throw new Error(result.message || 'Failed to fetch merchants');
 };
 
 // Fetch drivers
 export const fetchDrivers = async (): Promise<User[]> => {
-  const response = await fetch(`${API_URL}/api/user/drivers`, {
-    headers: getAuthHeaders(),
-  });
-
-  const result = await response.json();
+  const result = await secureGet<{ success: boolean; data: User[]; message?: string }>('/user/drivers');
+  
   if (result.success) {
     return result.data;
   }
-  throw new Error('Failed to fetch drivers');
+  throw new Error(result.message || 'Failed to fetch drivers');
 };
 
 // Fetch statuses
 export const fetchStatuses = async (): Promise<DeliveryStatus[]> => {
-  const response = await fetch(`${API_URL}/api/status`, {
-    headers: getAuthHeaders(),
-  });
-
-  const result = await response.json();
+  const result = await secureGet<{ success: boolean; data: DeliveryStatus[]; message?: string }>('/status');
+  
   if (result.success) {
     return result.data;
   }
-  throw new Error('Failed to fetch statuses');
+  throw new Error(result.message || 'Failed to fetch statuses');
 };
 
 // Fetch regions
 export const fetchRegions = async (): Promise<Region[]> => {
-  const response = await fetch(`${API_URL}/api/region`, {
-    headers: getAuthHeaders(),
-  });
-
-  const result = await response.json();
+  const result = await secureGet<{ success: boolean; data: Region[]; message?: string }>('/region');
+  
   if (result.success) {
     return result.data;
   }
-  throw new Error('Failed to fetch regions');
+  throw new Error(result.message || 'Failed to fetch regions');
 };
 
 // Fetch products/goods
 export const fetchProducts = async (merchantId: number): Promise<Array<{ id: string; name: string; stock: number }>> => {
-  const response = await fetch(`${API_URL}/api/good?merchant_id=${merchantId}`, {
-    headers: getAuthHeaders(),
-  });
-
-  const result = await response.json();
+  const result = await secureGet<{ success: boolean; data: any[]; message?: string }>(`/good?merchant_id=${merchantId}`);
+  
   if (result.success) {
     return result.data.map((item: any) => ({
       id: item.id.toString(),
@@ -253,18 +191,13 @@ export const fetchProducts = async (merchantId: number): Promise<Array<{ id: str
       stock: item.stock || 0,
     }));
   }
-  throw new Error('Failed to fetch products');
+  throw new Error(result.message || 'Failed to fetch products');
 };
 
 // Import deliveries from Excel
 export const importDeliveries = async (deliveries: any[]): Promise<{ inserted?: number }> => {
-  const response = await fetch(`${API_URL}/api/delivery/import`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ deliveries }),
-  });
-
-  const result = await response.json();
+  const result = await securePost<{ success: boolean; inserted?: number; message?: string }>('/delivery/import', { deliveries });
+  
   if (result.success) {
     return result;
   }
@@ -277,13 +210,11 @@ export const updateDeliveryItem = async (
   itemId: number,
   quantity: number
 ): Promise<DeliveryItem> => {
-  const response = await fetch(`${API_URL}/api/delivery/${deliveryId}/items/${itemId}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ quantity }),
-  });
-
-  const result = await response.json();
+  const result = await securePut<{ success: boolean; data: DeliveryItem; message?: string }>(
+    `/delivery/${deliveryId}/items/${itemId}`,
+    { quantity }
+  );
+  
   if (result.success) {
     return result.data;
   }
@@ -295,12 +226,8 @@ export const deleteDeliveryItem = async (
   deliveryId: number,
   itemId: number
 ): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/delivery/${deliveryId}/items/${itemId}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-  });
-
-  const result = await response.json();
+  const result = await secureDelete<{ success: boolean; message?: string }>(`/delivery/${deliveryId}/items/${itemId}`);
+  
   if (!result.success) {
     throw new Error(result.message || 'Failed to delete delivery item');
   }

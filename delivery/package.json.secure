@@ -1,11 +1,12 @@
 {
   "name": "nodejs-express-sequelize-mysql",
   "version": "1.0.0",
-  "description": "Node.js Rest Apis with Express, Sequelize & MySQL",
-  "main": "server.js",
+  "description": "Node.js Rest Apis with Express, Sequelize & MySQL - Secure Version",
+  "main": "server.secure.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js",
+    "dev": "nodemon server.secure.js",
+    "start": "node server.secure.js",
     "seed:permissions": "node app/scripts/seedPermissions.js"
   },
   "keywords": [
@@ -14,7 +15,10 @@
     "rest",
     "api",
     "sequelize",
-    "mysql"
+    "mysql",
+    "security",
+    "jwt",
+    "authentication"
   ],
   "author": "bezkoder",
   "license": "ISC",
@@ -33,7 +37,6 @@
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "moment-timezone": "^0.6.0",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.9.4",
     "pg": "^8.11.5",
@@ -43,3 +46,4 @@
     "nodemon": "^3.1.9"
   }
 }
+

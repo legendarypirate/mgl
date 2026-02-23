@@ -209,15 +209,15 @@ exports.findMerchantDelivery = (req, res) => {
   const ulaanbaatarOffset = 8 * 60;
   const localNow = new Date(now.getTime() + ulaanbaatarOffset * 60 * 1000);
 
-  const sevenDaysAgo = new Date(localNow);
-  sevenDaysAgo.setDate(localNow.getDate() - 7);
+  const fourteenDaysAgo = new Date(localNow);
+  fourteenDaysAgo.setDate(localNow.getDate() - 14);
 
   Delivery.findAll({
     where: {
       merchant_id: userId,
       is_deleted: { [Op.ne]: true }, // ✅ added condition
       createdAt: {
-        [Op.between]: [sevenDaysAgo, localNow],
+        [Op.between]: [fourteenDaysAgo, localNow],
       },
     },
     include: [
