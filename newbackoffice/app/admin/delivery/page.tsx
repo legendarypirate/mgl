@@ -783,12 +783,24 @@ function DeliveryPageContent() {
             <div className="text-sm text-gray-600">
               {selectedRowKeys.length} ширхэг сонгогдсон
               {selectedRowKeys.length > 0 && (
-                <span className="ml-4 font-semibold">
-                  Нийт: {deliveries
-                    .filter((d) => selectedRowKeys.includes(d.id))
-                    .reduce((sum, d) => sum + (Number(d.price) || 0), 0)
-                    .toLocaleString()}₮
-                </span>
+                <>
+                  <span className="ml-4 font-semibold">
+                    Нийт: {deliveries
+                      .filter((d) => selectedRowKeys.includes(d.id))
+                      .reduce((sum, d) => sum + (Number(d.price) || 0), 0)
+                      .toLocaleString()}₮
+                  </span>
+                  <span className="ml-4 font-semibold">
+                    Барааны тоо: {deliveries
+                      .filter((d) => selectedRowKeys.includes(d.id))
+                      .reduce((total, d) => {
+                        const items = d.items ?? expandedItems[d.id] ?? [];
+                        const qty = items.reduce((s, it) => s + (Number(it.quantity) || 0), 0);
+                        return total + qty;
+                      }, 0)
+                      .toLocaleString()}
+                  </span>
+                </>
               )}
             </div>
             <div className="flex gap-2">
